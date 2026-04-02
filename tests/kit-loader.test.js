@@ -108,3 +108,36 @@ test('validateKit fails for missing shared workspace', () => {
   assert.equal(result.errors.length >= 1, true);
   assert.match(result.errors[0], /Shared workspace directory not found/);
 });
+
+test('validateKit fails for missing setup script', () => {
+  const tempDir = makeTempDir();
+  const kitDir = path.join(tempDir, 'test-kit');
+  fs.mkdirSync(kitDir, { recursive: true });
+
+  const agentDir = path.join(kitDir, 'agents', 'agent1');
+  fs.mkdirSync(agentDir, { recursive: true });
+  fs.writeFileSync(path.join(agentDir, 'SOUL.md'), '# Agent 1');
+
+  fs.writeFileSync(
+    path.join(kitDir, 'kit.json'),
+    JSON.stringify({
+      name: 'test-kit',
+      agents: [
+        { id: 'agent1', soulFile: 'agents/agent1/SOUL.md' },
+      ],
+      setup: 'setup.js',
+    }),
+  );
+
+  fs.writeFileSync(
+    path.join(kitDir, 'openclaw.json'),
+    JSON.stringify({ agents: { defaults: {}, list: [] } }),
+  );
+
+  const kit = loadKit('test-kit', tempDir);
+  const result = validateKit(kit);
+
+  assert.equal(result.valid, false);
+  assert.equal(result.errors.length >= 1, true);
+  assert.match(result.errors[0], /Setup script not found: setup\.js/);
+});

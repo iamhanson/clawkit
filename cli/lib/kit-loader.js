@@ -172,6 +172,17 @@ function validateKit(kit) {
     }
   }
 
+  // --- setup script check ---
+
+  if (metadata.setup) {
+    const setupPath = path.join(kitDir, metadata.setup);
+    if (!fs.existsSync(setupPath)) {
+      errors.push(
+        `Setup script not found: ${metadata.setup}`
+      );
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors,
