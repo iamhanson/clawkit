@@ -63,6 +63,32 @@ Boss -> pm -> dev -> qa -> pm -> Boss
 clawkit deploy product-kit --config ~/.openclaw --apply
 ```
 
+### hotnews-kit
+
+Search news and create platform-specific articles for Toutiao, Xiaohongshu, WeChat, and Douyin.
+
+```
+User -> researcher -> toutiao-writer \
+                   -> xhs-writer      -> editor -> User
+                   -> wechat-writer  /
+                   -> douyin-writer  /
+```
+
+| Agent | Role | Communicates With |
+|-------|------|-------------------|
+| `researcher` | News Researcher | `toutiao-writer`, `xhs-writer`, `wechat-writer`, `douyin-writer` |
+| `toutiao-writer` | Toutiao Writer | `editor` |
+| `xhs-writer` | Xiaohongshu Writer | `editor` |
+| `wechat-writer` | WeChat Writer | `editor` |
+| `douyin-writer` | Douyin Script Writer | `editor` |
+| `editor` | Content Editor | `researcher` |
+
+**Use case:** News content creation pipeline with search, multi-platform writing, and editorial review.
+
+```bash
+clawkit deploy hotnews-kit --config ~/.openclaw --apply
+```
+
 ## CLI Usage
 
 ```bash

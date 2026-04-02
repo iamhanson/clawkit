@@ -61,6 +61,32 @@ Boss -> pm -> dev -> qa -> pm -> Boss
 clawkit deploy product-kit --config ~/.openclaw --apply
 ```
 
+### hotnews-kit
+
+搜索新闻并为今日头条、小红书、微信公众号、抖音创作平台专属内容。
+
+```
+用户 -> researcher -> toutiao-writer \
+                   -> xhs-writer      -> editor -> 用户
+                   -> wechat-writer  /
+                   -> douyin-writer  /
+```
+
+| 智能体 | 角色 | 通信对象 |
+|-------|------|---------|
+| `researcher` | 新闻搜索 | `toutiao-writer`, `xhs-writer`, `wechat-writer`, `douyin-writer` |
+| `toutiao-writer` | 今日头条写手 | `editor` |
+| `xhs-writer` | 小红书写手 | `editor` |
+| `wechat-writer` | 微信公众号写手 | `editor` |
+| `douyin-writer` | 抖音脚本写手 | `editor` |
+| `editor` | 内容审核 | `researcher` |
+
+**使用场景:** 新闻内容创作流水线,包含搜索、多平台写作和编辑审核。
+
+```bash
+clawkit deploy hotnews-kit --config ~/.openclaw --apply
+```
+
 ## CLI 用法
 
 ```bash
