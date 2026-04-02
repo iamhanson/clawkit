@@ -83,6 +83,14 @@ function getManagedSoulPath(configDir, targetName, shortId) {
   return path.join(getManagedWorkspacePath(configDir, targetName, shortId), 'SOUL.md');
 }
 
+function getAgentConfigDir(configDir, agentId) {
+  return path.join(configDir, 'agents', agentId, 'agent');
+}
+
+function getAgentSessionsDir(configDir, agentId) {
+  return path.join(configDir, 'agents', agentId, 'sessions');
+}
+
 function buildManagedAgents(configDir, sourceAgents, kitAgents, targetName) {
   const idMap = {};
   for (const agent of kitAgents) {
@@ -282,6 +290,8 @@ function executeDeployment(plan) {
 
   for (const agent of plan.managedAgents) {
     ensureDir(agent.workspace);
+    ensureDir(getAgentConfigDir(plan.targetConfigDir, agent.id));
+    ensureDir(getAgentSessionsDir(plan.targetConfigDir, agent.id));
   }
 
   // Copy all agent SOUL files

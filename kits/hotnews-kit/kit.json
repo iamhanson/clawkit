@@ -1,0 +1,16 @@
+{
+  "name": "hotnews-kit",
+  "version": "1.0.0",
+  "displayName": "Hot News Multi-Platform Content Creator",
+  "description": "Search news and create platform-specific articles for Toutiao, Xiaohongshu, WeChat, and Douyin",
+  "agents": [
+    { "id": "researcher", "role": "News Researcher", "soulFile": "agents/researcher/SOUL.md" },
+    { "id": "toutiao-writer", "role": "Toutiao Writer", "soulFile": "agents/toutiao-writer/SOUL.md" },
+    { "id": "xhs-writer", "role": "Xiaohongshu Writer", "soulFile": "agents/xhs-writer/SOUL.md" },
+    { "id": "wechat-writer", "role": "WeChat Writer", "soulFile": "agents/wechat-writer/SOUL.md" },
+    { "id": "douyin-writer", "role": "Douyin Script Writer", "soulFile": "agents/douyin-writer/SOUL.md" },
+    { "id": "editor", "role": "Content Editor", "soulFile": "agents/editor/SOUL.md" }
+  ],
+  "sharedWorkspace": "workspace-shared",
+  "setup": "setup.js"
+}

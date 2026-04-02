@@ -1,0 +1,12 @@
+{
+  "agents": {
+    "list": [
+      { "id": "researcher", "subagents": { "allowAgents": ["toutiao-writer", "xhs-writer", "wechat-writer", "douyin-writer"] } },
+      { "id": "toutiao-writer", "subagents": { "allowAgents": ["editor"] } },
+      { "id": "xhs-writer", "subagents": { "allowAgents": ["editor"] } },
+      { "id": "wechat-writer", "subagents": { "allowAgents": ["editor"] } },
+      { "id": "douyin-writer", "subagents": { "allowAgents": ["editor"] } },
+      { "id": "editor", "subagents": { "allowAgents": ["researcher"] } }
+    ]
+  }
+}
