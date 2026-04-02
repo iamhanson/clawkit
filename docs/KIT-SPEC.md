@@ -37,6 +37,7 @@ The `kit.json` file is the entry point for every kit. It must be valid JSON and 
 | `sharedWorkspace`  | string | Directory name for shared workspace   |
 | `routing`          | object | Agent-to-agent routing rules          |
 | `templates`        | array  | Template files included in the kit    |
+| `setup`            | string | Relative path to post-deployment Node.js script |
 
 ### Agent Definition
 
@@ -134,3 +135,68 @@ The shared workspace directory is created in the target project during deploymen
 - The directory is created empty during deployment
 - Agents write to and read from this directory during workflow execution
 - File naming conventions are defined by individual kits
+
+## Setup Script
+
+The `setup` field in `kit.json` specifies a Node.js script that runs automatically after kit deployment. Setup scripts handle post-deployment configuration that cannot be expressed through static files alone, such as:
+
+- Configuring agent model preferences and skills
+- Installing MCP servers required by the kit
+- Running interactive prompts to gather user-specific settings
+- Generating configuration files from templates with user input
+- Validating external dependencies (APIs, tools, services)
+
+### Setup Script Contract
+
+When ClawKit invokes a setup script, it passes two positional arguments:
+
+| Argument   | Description                                      |
+|------------|--------------------------------------------------|
+| `argv[2]`  | Absolute path to the target configuration directory |
+| `argv[3]`  | JSON string containing the deployment context    |
+
+The context object (`argv[3]`) has the following structure:
+
+| Property     | Type     | Description                                       |
+|--------------|----------|---------------------------------------------------|
+| `targetName` | string   | Name of the deployment target                     |
+| `agentIds`   | string[] | List of agent IDs deployed from this kit          |
+| `configPath` | string   | Absolute path to the target configuration directory |
+| `kitDir`     | string   | Absolute path to the source kit directory         |
+
+### Example
+
+A setup script that configures agent models and installs an MCP server:
+
+```javascript
+#!/usr/bin/env node
+
+import { readFileSync, writeFileSync } from "fs";
+import { join } from "path";
+import { execSync } from "child_process";
+
+const configDir = process.argv[2];
+const context = JSON.parse(process.argv[3]);
+
+// Read existing settings
+const settingsPath = join(configDir, "settings.json");
+const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
+
+// Configure model preferences for each agent
+for (const agentId of context.agentIds) {
+  const agentSettings = join(configDir, "agents", agentId, "settings.json");
+  writeFileSync(agentSettings, JSON.stringify({
+    model: "sonnet",
+    permissions: { allowedTools: ["Read", "Write", "Bash"] }
+  }, null, 2));
+}
+
+// Install an MCP server required by this kit
+execSync("npm install -g @example/mcp-server", { stdio: "inherit" });
+
+console.log(`Setup complete for ${context.targetName}`);
+```
+
+### Security Considerations
+
+> **Warning:** Setup scripts have full filesystem access and can execute arbitrary commands. Kit authors should document what their setup script does. Users should review setup scripts before deploying untrusted kits.
