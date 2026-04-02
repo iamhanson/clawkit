@@ -202,7 +202,7 @@ function createDeploymentPlan({ kit, configPath, apply, force, targetName, clean
 }
 
 function renderSummary(plan) {
-  return [
+  const lines = [
     `Mode: ${plan.mode}`,
     `Config: ${plan.configPath}`,
     `Target config dir: ${plan.targetConfigDir}`,
@@ -210,7 +210,13 @@ function renderSummary(plan) {
     `Backup: ${plan.backupPath}`,
     `Agents: ${plan.deployedAgentIds.join(', ')}`,
     `Shared workspace: ${plan.sharedWorkspacePath}`,
-  ].join('\n');
+  ];
+
+  if (plan.kit.metadata.setup) {
+    lines.push(`Setup script: ${plan.kit.metadata.setup}`);
+  }
+
+  return lines.join('\n');
 }
 
 function ensureDir(dirPath) {
@@ -295,6 +301,34 @@ function executeDeployment(plan) {
   }
 
   fs.writeFileSync(plan.configPath, JSON.stringify(plan.mergedConfig, null, 2) + '\n', 'utf8');
+
+  if (plan.kit.metadata.setup && plan.mode === 'apply') {
+    const setupPath = path.join(plan.kit.kitDir, plan.kit.metadata.setup);
+    const context = JSON.stringify({
+      targetName: plan.targetName,
+      agentIds: plan.deployedAgentIds,
+      configPath: plan.configPath,
+      kitDir: plan.kit.kitDir,
+    });
+
+    console.log(`\nRunning setup script: ${plan.kit.metadata.setup}`);
+
+    try {
+      const { spawnSync } = require('child_process');
+      const result = spawnSync('node', [setupPath, plan.targetConfigDir, context], {
+        stdio: 'inherit',
+        cwd: plan.kit.kitDir,
+      });
+
+      if (result.status !== 0) {
+        console.warn(`\nWarning: Setup script exited with code ${result.status}`);
+        console.warn('Base deployment completed, but setup may be incomplete.');
+      }
+    } catch (error) {
+      console.warn(`\nWarning: Failed to run setup script: ${error.message}`);
+      console.warn('Base deployment completed, but setup may be incomplete.');
+    }
+  }
 
   return {
     written: true,
