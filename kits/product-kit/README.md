@@ -56,3 +56,16 @@ If your OpenClaw installation expects absolute paths, replace:
 with the corresponding real paths in your `~/.openclaw/` environment.
 
 For portability, this example keeps repo-relative paths; real installs should generally use absolute paths.
+
+## Setup Script
+
+This kit includes an example setup script (`setup.example.js`) that demonstrates how to configure agent models and skills after deployment.
+
+To use it:
+
+1. Copy the example: `cp setup.example.js setup.js`
+2. Customize the model and skills configuration as needed
+3. Add `"setup": "setup.js"` to `kit.json`
+4. Deploy the kit: `clawkit deploy product-kit --config ~/.openclaw --apply`
+
+The setup script will automatically run after deployment and configure each agent's model and skills.

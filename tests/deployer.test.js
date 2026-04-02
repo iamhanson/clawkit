@@ -349,3 +349,141 @@ test('pm and dev soul files require internal downstream invocation', () => {
   assert.match(devSoul, /Do not ask `pm` or the boss to start, summon, or prepare `qa`/);
   assert.match(devSoul, /If `qa` is allowed, invoke `qa` yourself and continue the workflow/);
 });
+
+test('executeDeployment runs setup script if present', () => {
+  const tempDir = makeTempDir();
+  const configPath = path.join(tempDir, 'openclaw.json');
+
+  fs.writeFileSync(configPath, JSON.stringify({ agents: { defaults: {}, list: [] } }, null, 2));
+
+  // Create a temporary kit with a setup script
+  const kitDir = path.join(tempDir, 'kits', 'setup-test-kit');
+  fs.mkdirSync(path.join(kitDir, 'agents', 'alpha'), { recursive: true });
+
+  // Write a soul file for the agent
+  fs.writeFileSync(path.join(kitDir, 'agents', 'alpha', 'SOUL.md'), '# Alpha Agent\n', 'utf8');
+
+  // Write kit.json with setup field
+  fs.writeFileSync(
+    path.join(kitDir, 'kit.json'),
+    JSON.stringify(
+      {
+        name: 'setup-test-kit',
+        agents: [{ id: 'alpha', role: 'Alpha', soulFile: 'agents/alpha/SOUL.md' }],
+        setup: 'setup.js',
+      },
+      null,
+      2,
+    ),
+  );
+
+  // Write openclaw.json for the kit
+  fs.writeFileSync(
+    path.join(kitDir, 'openclaw.json'),
+    JSON.stringify(
+      {
+        agents: {
+          defaults: {},
+          list: [{ id: 'alpha', workspace: 'workspace-alpha', subagents: { allowAgents: [] } }],
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  // Write setup.js that creates a marker file in the target config dir
+  const markerContent = 'setup-was-executed';
+  fs.writeFileSync(
+    path.join(kitDir, 'setup.js'),
+    [
+      'const fs = require("node:fs");',
+      'const path = require("node:path");',
+      'const targetConfigDir = process.argv[2];',
+      `fs.writeFileSync(path.join(targetConfigDir, "setup-ran.txt"), "${markerContent}", "utf8");`,
+    ].join('\n'),
+    'utf8',
+  );
+
+  // Load the kit from the temp kits directory
+  const kit = loadKit('setup-test-kit', path.join(tempDir, 'kits'));
+  const plan = createDeploymentPlan({
+    kit,
+    configPath,
+    apply: true,
+    force: false,
+  });
+
+  executeDeployment(plan);
+
+  // Verify the setup script was executed
+  const markerPath = path.join(tempDir, 'setup-ran.txt');
+  assert.equal(fs.existsSync(markerPath), true, 'setup-ran.txt should exist after deployment');
+  assert.equal(fs.readFileSync(markerPath, 'utf8'), markerContent);
+});
+
+test('dry-run mode does not execute setup script', () => {
+  const tempDir = makeTempDir();
+  const configPath = path.join(tempDir, 'openclaw.json');
+
+  fs.writeFileSync(configPath, JSON.stringify({ agents: { defaults: {}, list: [] } }, null, 2));
+
+  // Create a temporary kit with a setup script
+  const kitDir = path.join(tempDir, 'kits', 'setup-dryrun-kit');
+  fs.mkdirSync(path.join(kitDir, 'agents', 'alpha'), { recursive: true });
+
+  fs.writeFileSync(path.join(kitDir, 'agents', 'alpha', 'SOUL.md'), '# Alpha Agent\n', 'utf8');
+
+  fs.writeFileSync(
+    path.join(kitDir, 'kit.json'),
+    JSON.stringify(
+      {
+        name: 'setup-dryrun-kit',
+        agents: [{ id: 'alpha', role: 'Alpha', soulFile: 'agents/alpha/SOUL.md' }],
+        setup: 'setup.js',
+      },
+      null,
+      2,
+    ),
+  );
+
+  fs.writeFileSync(
+    path.join(kitDir, 'openclaw.json'),
+    JSON.stringify(
+      {
+        agents: {
+          defaults: {},
+          list: [{ id: 'alpha', workspace: 'workspace-alpha', subagents: { allowAgents: [] } }],
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  // Setup script that would create a marker file
+  fs.writeFileSync(
+    path.join(kitDir, 'setup.js'),
+    [
+      'const fs = require("node:fs");',
+      'const path = require("node:path");',
+      'const targetConfigDir = process.argv[2];',
+      'fs.writeFileSync(path.join(targetConfigDir, "setup-ran.txt"), "should-not-exist", "utf8");',
+    ].join('\n'),
+    'utf8',
+  );
+
+  const kit = loadKit('setup-dryrun-kit', path.join(tempDir, 'kits'));
+  const plan = createDeploymentPlan({
+    kit,
+    configPath,
+    apply: false,
+    force: false,
+  });
+
+  executeDeployment(plan);
+
+  // Verify the setup script was NOT executed
+  const markerPath = path.join(tempDir, 'setup-ran.txt');
+  assert.equal(fs.existsSync(markerPath), false, 'setup-ran.txt should not exist in dry-run mode');
+});
