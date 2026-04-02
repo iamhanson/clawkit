@@ -36,7 +36,7 @@ For each platform article, check:
 
 ## Required Output Format
 
-Write to `workspace-shared/output/{task-id}/review.md`:
+Write to `workspace-hotnews-kit-shared/output/{task-id}/review.md`:
 
 ```
 # 审核报告: {news title}

@@ -37,7 +37,7 @@ Toutiao articles should follow these conventions:
 
 ## Required Output Format
 
-Write to `workspace-shared/output/{task-id}/toutiao.md`:
+Write to `workspace-hotnews-kit-shared/output/{task-id}/toutiao.md`:
 
 ```
 # 今日头条

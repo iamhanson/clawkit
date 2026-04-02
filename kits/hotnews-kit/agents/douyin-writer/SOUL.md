@@ -37,7 +37,7 @@ Douyin scripts should follow these conventions:
 
 ## Required Output Format
 
-Write to `workspace-shared/output/{task-id}/douyin.md`:
+Write to `workspace-hotnews-kit-shared/output/{task-id}/douyin.md`:
 
 ```
 # 抖音脚本

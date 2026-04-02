@@ -26,7 +26,7 @@ You are the News Researcher (`researcher`) for a hot news content creation workf
 
 ## Required Output Format
 
-Write a materials file to `workspace-shared/materials/{task-id}/research.md` using this structure:
+Write a materials file to `workspace-hotnews-kit-shared/materials/{task-id}/research.md` using this structure:
 
 - `# Research: {news title}`
 - `## Summary`: One paragraph summary of the news
