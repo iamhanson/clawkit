@@ -1,0 +1,16 @@
+{
+  "name": "clawkit",
+  "version": "2.0.0",
+  "description": "Reusable workflow kits for OpenClaw multi-agent systems",
+  "bin": {
+    "clawkit": "./cli/index.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": ["openclaw", "multi-agent", "workflow", "ai-agents"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

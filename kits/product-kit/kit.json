@@ -1,0 +1,24 @@
+{
+  "name": "product-kit",
+  "version": "1.0.0",
+  "displayName": "Product Development Workflow",
+  "description": "PM -> Dev -> QA product delivery workflow with strict routing and shared workspace",
+  "agents": [
+    {
+      "id": "pm",
+      "role": "Product Manager",
+      "soulFile": "agents/pm/SOUL.md"
+    },
+    {
+      "id": "dev",
+      "role": "Developer",
+      "soulFile": "agents/dev/SOUL.md"
+    },
+    {
+      "id": "qa",
+      "role": "QA Tester",
+      "soulFile": "agents/qa/SOUL.md"
+    }
+  ],
+  "sharedWorkspace": "workspace-shared"
+}
