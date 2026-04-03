@@ -1,6 +1,6 @@
 {
   "name": "clawkittool",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "On-demand installer for OpenClaw ClawKit workflow kits",
   "bin": {
     "clawkittool": "./bin/clawkittool.js"
@@ -12,6 +12,6 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   }
 }
