@@ -1,53 +1,62 @@
 # HotNews Kit
 
-Search news and create platform-specific articles for Toutiao, Xiaohongshu, WeChat Official Account, and Douyin.
+搜索新闻，并为今日头条、小红书、微信公众号、抖音生成平台专属内容。
 
-## Agents
+## 智能体
 
-| Agent | Role | Model |
-|-------|------|-------|
-| `researcher` | Searches news via tavily-search, organizes materials | Sonnet |
-| `toutiao-writer` | Creates Toutiao (今日头条) style article | Sonnet |
-| `xhs-writer` | Creates Xiaohongshu (小红书) style note | Sonnet |
-| `wechat-writer` | Creates WeChat (微信公众号) article | Sonnet |
-| `douyin-writer` | Creates Douyin (抖音) short video script | Sonnet |
-| `editor` | Reviews all content, flags issues | Sonnet |
+| 智能体 | 角色 | 模型 |
+|-------|------|------|
+| `researcher` | 使用 tavily-search 搜索新闻并整理素材 | Sonnet |
+| `toutiao-writer` | 生成今日头条风格文章 | Sonnet |
+| `xhs-writer` | 生成小红书风格笔记 | Sonnet |
+| `wechat-writer` | 生成微信公众号文章 | Sonnet |
+| `douyin-writer` | 生成抖音短视频脚本 | Sonnet |
+| `editor` | 审核所有内容并指出问题 | Sonnet |
 
-## Workflow
+## 工作流
 
 ```text
-User -> researcher -> toutiao-writer \
-                   -> xhs-writer      -> editor -> User
+用户 -> researcher -> toutiao-writer \
+                   -> xhs-writer      -> editor -> 用户
                    -> wechat-writer  /
                    -> douyin-writer  /
 ```
 
-1. User provides a news headline or link
-2. `researcher` searches related content and writes materials to shared workspace
-3. Four writers create platform-specific content in parallel
-4. `editor` reviews all articles and produces a review summary
-5. User receives the review report with all output files
+1. 用户提供新闻标题或链接
+2. `researcher` 搜索相关内容，并把素材写入共享工作区
+3. 四个 writer 并行产出不同平台内容
+4. `editor` 审核所有文章并输出审核结论
+5. 用户收到审核报告和全部输出文件
 
-## Prerequisites
+## 前置要求
 
-- [tavily-search skill](https://clawhub.ai/jacky1n7/openclaw-tavily-search) (installed automatically by setup.js)
+- 准备好 Tavily API Key
+- 运行 `setup.js` 的环境中需要有 `curl`、`unzip`、`zip`
 
-## Usage
+## 使用方法
 
 ```bash
-# Deploy the kit
+# 部署 kit
 clawkit deploy hotnews-kit --config ~/.openclaw --apply
 
-# The setup script will:
-# 1. Install tavily-search skill for the researcher
-# 2. Configure all agents to use Sonnet model
+# setup 脚本会：
+# 1. 询问两组模型配置
+# 2. 询问 Tavily API Key
+# 3. 追加 TAVILY_API_KEY 到 ~/.openclaw/.env
+# 4. 下载并安装 tavily-search 到 researcher 的 workspace
 ```
 
-## Output Structure
+Tavily skill 默认安装到：
 
-Each task produces files in the shared workspace (`workspace-hotnews-kit-shared`):
-
+```text
+~/.openclaw/workspace-hotnews-kit-researcher/skills/tavily-search/
 ```
+
+## 输出结构
+
+每次任务会在共享工作区 `workspace-hotnews-kit-shared` 下产出这些文件：
+
+```text
 workspace-hotnews-kit-shared/
 ├── materials/{task-id}/research.md    # 搜索素材
 └── output/{task-id}/
@@ -58,17 +67,17 @@ workspace-hotnews-kit-shared/
     └── review.md                      # 审核报告
 ```
 
-## Customizing Models
+## 自定义模型
 
-Edit the `setup.js` file to change model assignments:
+如果你要调整模型分配，可以编辑 `setup.js` 里的配置逻辑。例如：
 
 ```javascript
 const modelConfig = {
-  'researcher': 'sonnet',
+  researcher: 'sonnet',
   'toutiao-writer': 'haiku',
   'xhs-writer': 'haiku',
   'wechat-writer': 'sonnet',
   'douyin-writer': 'haiku',
-  'editor': 'opus',
+  editor: 'opus',
 };
 ```

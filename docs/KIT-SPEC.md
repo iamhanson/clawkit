@@ -35,7 +35,6 @@ The `kit.json` file is the entry point for every kit. It must be valid JSON and 
 | Field              | Type   | Description                           |
 |--------------------|--------|---------------------------------------|
 | `sharedWorkspace`  | string | Directory name for shared workspace   |
-| `routing`          | object | Agent-to-agent routing rules          |
 | `templates`        | array  | Template files included in the kit    |
 | `setup`            | string | Relative path to post-deployment Node.js script |
 
@@ -48,6 +47,7 @@ Each entry in the `agents` array must include:
 | `id`       | string | Unique identifier within the kit            |
 | `role`     | string | Human-readable role description             |
 | `soulFile` | string | Relative path to the agent SOUL.md file     |
+| `allowAgents` | array | Agent IDs this agent may invoke            |
 
 ### Example
 
@@ -61,17 +61,20 @@ Each entry in the `agents` array must include:
     {
       "id": "pm",
       "role": "Product Manager",
-      "soulFile": "agents/pm/SOUL.md"
+      "soulFile": "agents/pm/SOUL.md",
+      "allowAgents": ["dev"]
     },
     {
       "id": "dev",
       "role": "Developer",
-      "soulFile": "agents/dev/SOUL.md"
+      "soulFile": "agents/dev/SOUL.md",
+      "allowAgents": ["pm", "qa"]
     },
     {
       "id": "qa",
       "role": "QA Tester",
-      "soulFile": "agents/qa/SOUL.md"
+      "soulFile": "agents/qa/SOUL.md",
+      "allowAgents": ["dev", "pm"]
     }
   ],
   "sharedWorkspace": "workspace-shared"
@@ -104,6 +107,17 @@ ClawKit validates kits during deployment. The following rules must be satisfied:
 
 - At least one agent must be defined
 - Each agent must have a non-empty `id`, `role`, and `soulFile`
+- Every agent must define `allowAgents` in `kit.json`
+- `allowAgents` may only reference agent IDs declared in the same kit
+- Duplicate agent IDs are invalid in `kit.json`
+
+## Defaults Behavior
+
+ClawKit preserves the target environment's existing `agents.defaults` when deploying a kit.
+
+- Kits should not assume they can overwrite global defaults through `kit.json`
+- If a kit truly requires changes to defaults, it must do so explicitly in `setup.js`
+- Any such behavior must be documented clearly for users before deployment
 
 ## SOUL.md Format
 

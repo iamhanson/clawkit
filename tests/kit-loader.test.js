@@ -32,6 +32,11 @@ test('loadKit succeeds for product-kit', () => {
   assert.equal(kit.metadata.agents[0].id, 'pm');
   assert.equal(kit.metadata.agents[1].id, 'dev');
   assert.equal(kit.metadata.agents[2].id, 'qa');
+  assert.deepEqual(kit.config.agents.defaults, {});
+  assert.deepEqual(
+    kit.config.agents.list.find((agent) => agent.id === 'dev').subagents.allowAgents,
+    ['pm', 'qa'],
+  );
 });
 
 test('loadKit throws for unknown kit', () => {
@@ -48,6 +53,37 @@ test('validateKit passes for valid kit', () => {
   assert.deepEqual(result.errors, []);
 });
 
+test('loadKit succeeds without openclaw.json when kit.json defines routing inline', () => {
+  const tempDir = makeTempDir();
+  const kitDir = path.join(tempDir, 'inline-kit');
+  fs.mkdirSync(path.join(kitDir, 'agents', 'agent1'), { recursive: true });
+  fs.writeFileSync(path.join(kitDir, 'agents', 'agent1', 'SOUL.md'), '# Agent 1');
+
+  fs.writeFileSync(
+    path.join(kitDir, 'kit.json'),
+    JSON.stringify({
+      name: 'inline-kit',
+      agents: [
+        {
+          id: 'agent1',
+          role: 'Agent One',
+          soulFile: 'agents/agent1/SOUL.md',
+          allowAgents: [],
+        },
+      ],
+    }),
+  );
+
+  const kit = loadKit('inline-kit', tempDir);
+
+  assert.deepEqual(kit.config, {
+    agents: {
+      defaults: {},
+      list: [{ id: 'agent1', subagents: { allowAgents: [] } }],
+    },
+  });
+});
+
 test('validateKit fails for missing soul file', () => {
   const tempDir = makeTempDir();
   const kitDir = path.join(tempDir, 'test-kit');
@@ -58,14 +94,9 @@ test('validateKit fails for missing soul file', () => {
     JSON.stringify({
       name: 'test-kit',
       agents: [
-        { id: 'agent1', soulFile: 'agents/agent1/SOUL.md' },
+        { id: 'agent1', soulFile: 'agents/agent1/SOUL.md', allowAgents: [] },
       ],
     }),
-  );
-
-  fs.writeFileSync(
-    path.join(kitDir, 'openclaw.json'),
-    JSON.stringify({ agents: { defaults: {}, list: [] } }),
   );
 
   const kit = loadKit('test-kit', tempDir);
@@ -90,15 +121,10 @@ test('validateKit fails for missing shared workspace', () => {
     JSON.stringify({
       name: 'test-kit',
       agents: [
-        { id: 'agent1', soulFile: 'agents/agent1/SOUL.md' },
+        { id: 'agent1', soulFile: 'agents/agent1/SOUL.md', allowAgents: [] },
       ],
       sharedWorkspace: 'workspace-shared',
     }),
-  );
-
-  fs.writeFileSync(
-    path.join(kitDir, 'openclaw.json'),
-    JSON.stringify({ agents: { defaults: {}, list: [] } }),
   );
 
   const kit = loadKit('test-kit', tempDir);
@@ -123,15 +149,10 @@ test('validateKit fails for missing setup script', () => {
     JSON.stringify({
       name: 'test-kit',
       agents: [
-        { id: 'agent1', soulFile: 'agents/agent1/SOUL.md' },
+        { id: 'agent1', soulFile: 'agents/agent1/SOUL.md', allowAgents: [] },
       ],
       setup: 'setup.js',
     }),
-  );
-
-  fs.writeFileSync(
-    path.join(kitDir, 'openclaw.json'),
-    JSON.stringify({ agents: { defaults: {}, list: [] } }),
   );
 
   const kit = loadKit('test-kit', tempDir);
@@ -140,4 +161,76 @@ test('validateKit fails for missing setup script', () => {
   assert.equal(result.valid, false);
   assert.equal(result.errors.length >= 1, true);
   assert.match(result.errors[0], /Setup script not found: setup\.js/);
+});
+
+test('loadKit throws when allowAgents is missing and no legacy openclaw.json exists', () => {
+  const tempDir = makeTempDir();
+  const kitDir = path.join(tempDir, 'test-kit');
+  fs.mkdirSync(path.join(kitDir, 'agents', 'pm'), { recursive: true });
+  fs.writeFileSync(path.join(kitDir, 'agents', 'pm', 'SOUL.md'), '# PM');
+
+  fs.writeFileSync(
+    path.join(kitDir, 'kit.json'),
+    JSON.stringify({
+      name: 'test-kit',
+      agents: [
+        { id: 'pm', role: 'PM', soulFile: 'agents/pm/SOUL.md' },
+      ],
+    }),
+  );
+
+  assert.throws(
+    () => loadKit('test-kit', tempDir),
+    /must define allowAgents for every agent in kit\.json/,
+  );
+});
+
+test('validateKit fails when kit.json has duplicate agent ids', () => {
+  const tempDir = makeTempDir();
+  const kitDir = path.join(tempDir, 'test-kit');
+  fs.mkdirSync(path.join(kitDir, 'agents', 'pm'), { recursive: true });
+  fs.writeFileSync(path.join(kitDir, 'agents', 'pm', 'SOUL.md'), '# PM');
+
+  fs.writeFileSync(
+    path.join(kitDir, 'kit.json'),
+    JSON.stringify({
+      name: 'test-kit',
+      agents: [
+        { id: 'pm', role: 'PM', soulFile: 'agents/pm/SOUL.md', allowAgents: [] },
+        { id: 'pm', role: 'PM duplicate', soulFile: 'agents/pm/SOUL.md', allowAgents: [] },
+      ],
+    }),
+  );
+
+  const kit = loadKit('test-kit', tempDir);
+  const result = validateKit(kit);
+
+  assert.equal(result.valid, false);
+  assert.match(result.errors.join('\n'), /Duplicate agent id in kit\.json: "pm"/);
+});
+
+test('validateKit fails when allowAgents references unknown agents', () => {
+  const tempDir = makeTempDir();
+  const kitDir = path.join(tempDir, 'test-kit');
+  fs.mkdirSync(path.join(kitDir, 'agents', 'pm'), { recursive: true });
+  fs.mkdirSync(path.join(kitDir, 'agents', 'dev'), { recursive: true });
+  fs.writeFileSync(path.join(kitDir, 'agents', 'pm', 'SOUL.md'), '# PM');
+  fs.writeFileSync(path.join(kitDir, 'agents', 'dev', 'SOUL.md'), '# Dev');
+
+  fs.writeFileSync(
+    path.join(kitDir, 'kit.json'),
+    JSON.stringify({
+      name: 'test-kit',
+      agents: [
+        { id: 'pm', role: 'PM', soulFile: 'agents/pm/SOUL.md', allowAgents: ['dev', 'qa'] },
+        { id: 'dev', role: 'Dev', soulFile: 'agents/dev/SOUL.md', allowAgents: [] },
+      ],
+    }),
+  );
+
+  const kit = loadKit('test-kit', tempDir);
+  const result = validateKit(kit);
+
+  assert.equal(result.valid, false);
+  assert.match(result.errors.join('\n'), /allowAgents references unknown agent "qa" from "pm"/);
 });

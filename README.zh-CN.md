@@ -7,7 +7,7 @@ OpenClaw 多智能体系统的可复用工作流套件。
 Kit 是一个打包好的多智能体工作流,可以部署到任何 OpenClaw 环境中。每个 kit 包含:
 
 - **智能体定义** -- SOUL.md 文件定义个性、职责和约束
-- **路由规则** -- 谁可以和谁对话 (`allowAgents`)
+- **路由规则** -- 谁可以和谁对话 (`kit.json` 里的 `allowAgents`)
 - **共享工作区** -- 智能体协作产物的目录结构
 - **元数据** -- kit.json 包含版本、描述和智能体清单
 
@@ -87,6 +87,8 @@ clawkit deploy product-kit --config ~/.openclaw --apply
 clawkit deploy hotnews-kit --config ~/.openclaw --apply
 ```
 
+部署时，setup 会询问 Tavily API Key，把 `TAVILY_API_KEY=...` 追加到 `~/.openclaw/.env`，并把 `tavily-search` skill 安装到 researcher 的 workspace 中。
+
 ## CLI 用法
 
 ```bash
@@ -121,7 +123,6 @@ clawkit/
 ├── kits/                     # 所有可用的 kit
 │   └── product-kit/          # 每个 kit 一个目录
 │       ├── kit.json          # Kit 元数据和智能体清单
-│       ├── openclaw.json     # 智能体路由配置
 │       ├── README.md         # Kit 文档
 │       ├── agents/           # 智能体 SOUL 文件
 │       │   ├── pm/SOUL.md
@@ -145,10 +146,12 @@ clawkit/
 
 **快速概览:**
 
-1. 创建 `kits/your-kit-name/`,包含 `kit.json`、`openclaw.json` 和智能体 SOUL 文件
+1. 创建 `kits/your-kit-name/`,包含 `kit.json` 和智能体 SOUL 文件
 2. 运行 `clawkit validate your-kit-name` 验证结构
 3. 在 `tests/` 下添加测试
 4. 提交 PR
+
+ClawKit 默认保持目标环境中已有的 `agents.defaults` 不变。如果某个 kit 确实需要调整默认值，应通过 `setup.js` 显式处理，并在文档中清楚提示用户。
 
 完整的 kit 规范见 [docs/KIT-SPEC.md](./docs/KIT-SPEC.md)。
 

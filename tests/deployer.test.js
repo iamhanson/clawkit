@@ -369,23 +369,8 @@ test('executeDeployment runs setup script if present', () => {
     JSON.stringify(
       {
         name: 'setup-test-kit',
-        agents: [{ id: 'alpha', role: 'Alpha', soulFile: 'agents/alpha/SOUL.md' }],
+        agents: [{ id: 'alpha', role: 'Alpha', soulFile: 'agents/alpha/SOUL.md', allowAgents: [] }],
         setup: 'setup.js',
-      },
-      null,
-      2,
-    ),
-  );
-
-  // Write openclaw.json for the kit
-  fs.writeFileSync(
-    path.join(kitDir, 'openclaw.json'),
-    JSON.stringify(
-      {
-        agents: {
-          defaults: {},
-          list: [{ id: 'alpha', workspace: 'workspace-alpha', subagents: { allowAgents: [] } }],
-        },
       },
       null,
       2,
@@ -439,22 +424,8 @@ test('dry-run mode does not execute setup script', () => {
     JSON.stringify(
       {
         name: 'setup-dryrun-kit',
-        agents: [{ id: 'alpha', role: 'Alpha', soulFile: 'agents/alpha/SOUL.md' }],
+        agents: [{ id: 'alpha', role: 'Alpha', soulFile: 'agents/alpha/SOUL.md', allowAgents: [] }],
         setup: 'setup.js',
-      },
-      null,
-      2,
-    ),
-  );
-
-  fs.writeFileSync(
-    path.join(kitDir, 'openclaw.json'),
-    JSON.stringify(
-      {
-        agents: {
-          defaults: {},
-          list: [{ id: 'alpha', workspace: 'workspace-alpha', subagents: { allowAgents: [] } }],
-        },
       },
       null,
       2,
