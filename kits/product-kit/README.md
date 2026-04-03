@@ -8,6 +8,10 @@
 
 老板是工作流之外的人类用户，入口固定为 `pm`。
 
+<img width="1073" height="592" alt="image" src="https://github.com/user-attachments/assets/427c8c2a-1de5-4979-8daf-ca97954f6fe0" />
+
+
+
 ## 通信链路
 
 主流程：
