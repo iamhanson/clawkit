@@ -6,7 +6,8 @@
     "clawkit": "./cli/index.js"
   },
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "build:distribution": "node scripts/build-distribution.js"
   },
   "keywords": ["openclaw", "multi-agent", "workflow", "ai-agents"],
   "license": "MIT",

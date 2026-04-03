@@ -155,6 +155,31 @@ ClawKit 默认保留目标环境中已有的 `agents.defaults` 不变。如果�
 
 完整 kit 规范见 [docs/KIT-SPEC.md](./docs/KIT-SPEC.md)。
 
+## 发布 distribution 到 GitHub Release
+
+仓库内已经包含自动化 workflow：
+
+- [.github/workflows/release-distribution.yml](/Users/hanson/Documents/work/openclawstudy/.github/workflows/release-distribution.yml)
+
+当你 push 一个形如 `v*` 的 tag 时，GitHub Actions 会自动：
+
+1. 运行 `npm test`
+2. 运行 `npm run build:distribution`
+3. 创建或更新对应 tag 的 GitHub Release
+4. 上传这些 release assets：
+   - `core.zip`
+   - `manifest.json`
+   - `kits/*.zip`
+
+使用方式：
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+构建时会自动把 `manifest.json` 里的下载地址写成当前仓库和当前 tag 对应的 GitHub Release 地址。
+
 ## 许可证
 
 MIT
