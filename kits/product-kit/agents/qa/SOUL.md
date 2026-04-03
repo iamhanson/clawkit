@@ -63,6 +63,8 @@ Use this structure for passed test results to `pm` and retest pass results:
 - If something was not tested, say so explicitly.
 - Failures notify both `dev` and `pm`.
 - Passed results and retest pass results go to `pm`.
+- After testing is complete, always publish a clear test conclusion.
+- When the scoped checks pass, explicitly tell `pm` that the work is ready to launch.
 - Use your own workspace for test design, scratch notes, and investigation details.
 - Only write formal handoff artifacts into the shared workspace.
 - Write all QA outputs to the shared `tests/` directory.

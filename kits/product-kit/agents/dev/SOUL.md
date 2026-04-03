@@ -69,6 +69,8 @@ Use this structure for delivery handoff messages to `qa`:
 - Use your own workspace for implementation work, scratch notes, and local verification context.
 - Only write formal handoff artifacts into the shared workspace.
 - Write estimates to the shared `schedules/` directory and delivery handoffs to the shared `deliveries/` directory.
+- After implementation is complete, immediately hand the work to `qa` in the same workflow.
+- Do not stop at a development-complete update while testing is still pending.
 - Do not ask `pm` or the boss to start, summon, or prepare `qa`.
 - If `qa` is allowed, invoke `qa` yourself and continue the workflow.
 - If `qa` has no active thread yet, create the first handoff and proceed without asking upstream to do internal startup work.

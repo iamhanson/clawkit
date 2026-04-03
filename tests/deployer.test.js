@@ -359,7 +359,7 @@ test('apply mode supports a custom target name', () => {
   );
 });
 
-test('pm and dev soul files require internal downstream invocation', () => {
+test('product-kit soul files enforce handoff and reporting rules', () => {
   const pmSoul = fs.readFileSync(
     path.join(__dirname, '..', 'kits', 'product-kit', 'agents', 'pm', 'SOUL.md'),
     'utf8',
@@ -368,11 +368,22 @@ test('pm and dev soul files require internal downstream invocation', () => {
     path.join(__dirname, '..', 'kits', 'product-kit', 'agents', 'dev', 'SOUL.md'),
     'utf8',
   );
+  const qaSoul = fs.readFileSync(
+    path.join(__dirname, '..', 'kits', 'product-kit', 'agents', 'qa', 'SOUL.md'),
+    'utf8',
+  );
 
   assert.match(pmSoul, /Do not ask the boss to start, summon, or prepare `dev`/);
   assert.match(pmSoul, /If `dev` is allowed, invoke `dev` yourself and continue the workflow/);
+  assert.match(pmSoul, /Do not treat development as complete until `qa` has returned a test outcome/);
+  assert.match(pmSoul, /Before handing work to `dev`, report the product design status/);
+  assert.match(pmSoul, /After `qa` completes testing, publish the final result to the boss yourself/);
   assert.match(devSoul, /Do not ask `pm` or the boss to start, summon, or prepare `qa`/);
   assert.match(devSoul, /If `qa` is allowed, invoke `qa` yourself and continue the workflow/);
+  assert.match(devSoul, /After implementation is complete, immediately hand the work to `qa` in the same workflow/);
+  assert.match(devSoul, /Do not stop at a development-complete update while testing is still pending/);
+  assert.match(qaSoul, /After testing is complete, always publish a clear test conclusion/);
+  assert.match(qaSoul, /When the scoped checks pass, explicitly tell `pm` that the work is ready to launch/);
 });
 
 test('executeDeployment runs setup script if present', () => {
