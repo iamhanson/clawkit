@@ -13,6 +13,9 @@ Search news and create platform-specific articles for Toutiao, Xiaohongshu, WeCh
 | `douyin-writer` | Creates Douyin (抖音) short video script | Sonnet |
 | `editor` | Reviews all content, flags issues | Sonnet |
 
+<img width="1250" height="1826" alt="d739209540b3db9d06a233bfd06ddb0c" src="https://github.com/user-attachments/assets/343e2692-f088-460d-89ba-f12f3fd8d297" />
+
+
 ## Workflow
 
 ```text
