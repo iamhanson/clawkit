@@ -7,8 +7,12 @@ const { spawnSync } = require('node:child_process');
 
 const {
   appendEnvVar,
+  DEFAULT_OPENAI_COMPAT_BASE_URL,
+  buildAuthProfilesJson,
+  buildModelsJson,
   installResearcherSkill,
   updateAgentModelsInConfig,
+  writeAuthProfilesJson,
 } = require('../kits/hotnews-kit/setup');
 
 function makeTempDir() {
@@ -48,6 +52,73 @@ test('appendEnvVar appends to existing .env', () => {
   appendEnvVar(envPath, 'TAVILY_API_KEY', 'test-key');
 
   assert.equal(fs.readFileSync(envPath, 'utf8'), 'EXISTING_KEY=1\nTAVILY_API_KEY=test-key\n');
+});
+
+test('buildAuthProfilesJson creates api_key auth store for provider', () => {
+  const auth = buildAuthProfilesJson('xfyun-maas', 'demo-key');
+
+  assert.deepEqual(auth, {
+    version: 1,
+    profiles: {
+      'xfyun-maas:default': {
+        type: 'api_key',
+        provider: 'xfyun-maas',
+        key: 'demo-key',
+      },
+    },
+    order: {
+      'xfyun-maas': ['xfyun-maas:default'],
+    },
+    lastGood: {
+      'xfyun-maas': 'xfyun-maas:default',
+    },
+    usageStats: {},
+  });
+});
+
+test('buildModelsJson uses configured baseUrl and default OpenAI-compatible endpoint is available', () => {
+  const models = buildModelsJson(
+    'xfyun-maas',
+    DEFAULT_OPENAI_COMPAT_BASE_URL,
+    'demo-key',
+    'xopglm5',
+    'openai-completions',
+  );
+
+  assert.equal(models.providers['xfyun-maas'].baseUrl, DEFAULT_OPENAI_COMPAT_BASE_URL);
+  assert.equal(models.providers['xfyun-maas'].models[0].contextWindow, 120000);
+  assert.equal(models.providers['xfyun-maas'].models[0].maxTokens, 40960);
+});
+
+test('writeAuthProfilesJson writes auth-profiles.json into current agent dir', () => {
+  const tempDir = makeTempDir();
+  const authPath = writeAuthProfilesJson(
+    tempDir,
+    'sandbox-researcher',
+    buildAuthProfilesJson('xfyun-maas', 'demo-key'),
+  );
+
+  assert.equal(
+    authPath,
+    path.join(tempDir, 'agents', 'sandbox-researcher', 'agent', 'auth-profiles.json'),
+  );
+  assert.deepEqual(JSON.parse(fs.readFileSync(authPath, 'utf8')), {
+    version: 1,
+    profiles: {
+      'xfyun-maas:default': {
+        type: 'api_key',
+        provider: 'xfyun-maas',
+        key: 'demo-key',
+      },
+    },
+    order: {
+      'xfyun-maas': ['xfyun-maas:default'],
+    },
+    lastGood: {
+      'xfyun-maas': 'xfyun-maas:default',
+    },
+    usageStats: {},
+  });
 });
 
 test('installResearcherSkill downloads and extracts into tavily-search directory', () => {

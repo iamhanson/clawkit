@@ -517,3 +517,33 @@ test('apply mode copies main auth-profiles.json into managed agent dirs', () => 
   assert.equal(fs.existsSync(qaAuthPath), true);
   assert.equal(fs.readFileSync(pmAuthPath, 'utf8'), fs.readFileSync(mainAuthPath, 'utf8'));
 });
+
+test('apply mode warns when main auth-profiles.json is missing', () => {
+  const tempDir = makeTempDir();
+  const configPath = path.join(tempDir, 'openclaw.json');
+
+  fs.writeFileSync(configPath, JSON.stringify({ agents: { defaults: {}, list: [] } }, null, 2));
+
+  const kit = loadProductKit();
+  const plan = createDeploymentPlan({
+    kit,
+    configPath,
+    apply: true,
+    force: false,
+  });
+
+  const warnings = [];
+  const originalWarn = console.warn;
+  console.warn = (message) => warnings.push(String(message));
+
+  try {
+    executeDeployment(plan);
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  assert.equal(
+    warnings.some((message) => message.includes('auth-profiles.json') && message.includes('main')),
+    true,
+  );
+});

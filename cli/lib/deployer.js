@@ -279,6 +279,9 @@ function copyWorkspaceTree(sourceDir, targetDir, force) {
 function copyAuthProfilesToManagedAgents(plan) {
   const sourceAuthProfilesPath = getMainAuthProfilesPath(plan.targetConfigDir);
   if (!fs.existsSync(sourceAuthProfilesPath)) {
+    console.warn(
+      `Warning: main auth-profiles.json not found, skipping auth copy: ${sourceAuthProfilesPath}`,
+    );
     return;
   }
 

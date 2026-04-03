@@ -13,6 +13,7 @@ const { spawnSync } = require('child_process');
 
 const DEFAULT_TAVILY_SKILL_URL =
   'https://wry-manatee-359.convex.site/api/v1/download?slug=openclaw-tavily-search';
+const DEFAULT_OPENAI_COMPAT_BASE_URL = 'https://maas-api.cn-huabei-1.xf-yun.com/v2';
 
 function ask(rl, prompt) {
   return new Promise((resolve) => {
@@ -55,13 +56,44 @@ function writeModelsJson(configDir, agentId, modelsJson) {
   return filePath;
 }
 
+function buildAuthProfilesJson(providerId, apiKey) {
+  const profileId = `${providerId}:default`;
+  return {
+    version: 1,
+    profiles: {
+      [profileId]: {
+        type: 'api_key',
+        provider: providerId,
+        key: apiKey,
+      },
+    },
+    order: {
+      [providerId]: [profileId],
+    },
+    lastGood: {
+      [providerId]: profileId,
+    },
+    usageStats: {},
+  };
+}
+
+function writeAuthProfilesJson(configDir, agentId, authProfilesJson) {
+  const filePath = path.join(configDir, 'agents', agentId, 'agent', 'auth-profiles.json');
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, JSON.stringify(authProfilesJson, null, 2) + '\n', 'utf8');
+  return filePath;
+}
+
 async function askModelConfig(rl, groupName) {
   console.log(`\n${'='.repeat(60)}`);
   console.log(`配置模型: ${groupName}`);
   console.log('='.repeat(60));
 
   const providerId = await ask(rl, '  Provider ID (例如 xunfeiMaaSKM25): ');
-  const baseUrl = await ask(rl, '  Base URL (例如 https://maas-api.cn-huabei-1.xf-yun.com/v2): ');
+  const baseUrl = await ask(
+    rl,
+    `  Base URL (默认 ${DEFAULT_OPENAI_COMPAT_BASE_URL}): `,
+  );
   const apiKey = await ask(rl, '  API Key: ');
   const modelId = await ask(rl, '  Model ID (例如 xopkimik25): ');
   const apiInput = await ask(rl, '  API 类型 (默认 openai-completions): ');
@@ -69,10 +101,14 @@ async function askModelConfig(rl, groupName) {
 
   const trimmedProviderId = providerId.trim();
   const trimmedModelId = modelId.trim();
+  const trimmedBaseUrl = baseUrl.trim() || DEFAULT_OPENAI_COMPAT_BASE_URL;
 
   return {
+    providerId: trimmedProviderId,
+    apiKey: apiKey.trim(),
     modelRef: buildModelRef(trimmedProviderId, trimmedModelId),
-    modelsJson: buildModelsJson(trimmedProviderId, baseUrl.trim(), apiKey.trim(), trimmedModelId, api),
+    modelsJson: buildModelsJson(trimmedProviderId, trimmedBaseUrl, apiKey.trim(), trimmedModelId, api),
+    authProfilesJson: buildAuthProfilesJson(trimmedProviderId, apiKey.trim()),
   };
 }
 
@@ -202,14 +238,18 @@ async function runSetup(configDir, context, env = process.env) {
 
     const researcherEditorModels = await askModelConfig(rl, 'researcher + editor (搜索和审核)');
     for (const agentId of researcherAndEditor) {
-      const filePath = writeModelsJson(configDir, agentId, researcherEditorModels.modelsJson);
-      console.log(`  ${agentId}: ${filePath}`);
+      const modelPath = writeModelsJson(configDir, agentId, researcherEditorModels.modelsJson);
+      const authPath = writeAuthProfilesJson(configDir, agentId, researcherEditorModels.authProfilesJson);
+      console.log(`  ${agentId}: ${modelPath}`);
+      console.log(`  ${agentId}: ${authPath}`);
     }
 
     const writerModels = await askModelConfig(rl, '4 个 writer (今日头条/小红书/微信/抖音)');
     for (const agentId of writers) {
-      const filePath = writeModelsJson(configDir, agentId, writerModels.modelsJson);
-      console.log(`  ${agentId}: ${filePath}`);
+      const modelPath = writeModelsJson(configDir, agentId, writerModels.modelsJson);
+      const authPath = writeAuthProfilesJson(configDir, agentId, writerModels.authProfilesJson);
+      console.log(`  ${agentId}: ${modelPath}`);
+      console.log(`  ${agentId}: ${authPath}`);
     }
 
     updateAgentModelsInConfig({
@@ -255,12 +295,15 @@ if (require.main === module) {
 }
 
 module.exports = {
+  DEFAULT_OPENAI_COMPAT_BASE_URL,
   DEFAULT_TAVILY_SKILL_URL,
   appendEnvVar,
+  buildAuthProfilesJson,
   buildModelRef,
   buildModelsJson,
   installResearcherSkill,
   runSetup,
   updateAgentModelsInConfig,
+  writeAuthProfilesJson,
   writeModelsJson,
 };
