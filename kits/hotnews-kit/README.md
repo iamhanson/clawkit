@@ -45,8 +45,9 @@ clawkit deploy hotnews-kit --config ~/.openclaw --apply
 # setup 脚本会：
 # 1. 询问两组模型配置
 # 2. 询问 Tavily API Key
-# 3. 追加 TAVILY_API_KEY 到 ~/.openclaw/.env
-# 4. 下载并安装 tavily-search 到 researcher 的 workspace
+# 3. 把模型写入对应 agent 的 models.json，并同步更新 openclaw.json 中各 agent 的 model 字段
+# 4. 追加 TAVILY_API_KEY 到 ~/.openclaw/.env
+# 5. 下载并安装 tavily-search 到 researcher 的 workspace
 ```
 
 Tavily skill 默认安装到：

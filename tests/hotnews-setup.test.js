@@ -8,6 +8,7 @@ const { spawnSync } = require('node:child_process');
 const {
   appendEnvVar,
   installResearcherSkill,
+  updateAgentModelsInConfig,
 } = require('../kits/hotnews-kit/setup');
 
 function makeTempDir() {
@@ -73,4 +74,52 @@ test('installResearcherSkill downloads and extracts into tavily-search directory
 
   assert.equal(fs.existsSync(path.join(installedSkillDir, 'SKILL.md')), true);
   assert.equal(fs.existsSync(path.join(configDir, `workspace-${targetName}-researcher`, 'skills', 'tavily-search.zip')), false);
+});
+
+test('updateAgentModelsInConfig writes grouped model ids into agents.list', () => {
+  const tempDir = makeTempDir();
+  const configPath = path.join(tempDir, 'openclaw.json');
+
+  fs.writeFileSync(
+    configPath,
+    JSON.stringify(
+      {
+        agents: {
+          defaults: {
+            workspace: '/tmp/default',
+          },
+          list: [
+            { id: 'sandbox-researcher', workspace: '/tmp/r', subagents: { allowAgents: [] } },
+            { id: 'sandbox-editor', workspace: '/tmp/e', subagents: { allowAgents: [] } },
+            { id: 'sandbox-toutiao-writer', workspace: '/tmp/t', subagents: { allowAgents: [] } },
+            { id: 'sandbox-xhs-writer', workspace: '/tmp/x', subagents: { allowAgents: [] } },
+            { id: 'sandbox-wechat-writer', workspace: '/tmp/w', subagents: { allowAgents: [] } },
+            { id: 'sandbox-douyin-writer', workspace: '/tmp/d', subagents: { allowAgents: [] } },
+            { id: 'other-agent', workspace: '/tmp/o', subagents: { allowAgents: [] } },
+          ],
+        },
+      },
+      null,
+      2,
+    ),
+    'utf8',
+  );
+
+  updateAgentModelsInConfig({
+    configPath,
+    targetName: 'sandbox',
+    researcherEditorModelRef: 'provider-a/model-a',
+    writerModelRef: 'provider-b/model-b',
+  });
+
+  const updated = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+
+  assert.equal(updated.agents.defaults.workspace, '/tmp/default');
+  assert.equal(updated.agents.list.find((agent) => agent.id === 'sandbox-researcher').model, 'provider-a/model-a');
+  assert.equal(updated.agents.list.find((agent) => agent.id === 'sandbox-editor').model, 'provider-a/model-a');
+  assert.equal(updated.agents.list.find((agent) => agent.id === 'sandbox-toutiao-writer').model, 'provider-b/model-b');
+  assert.equal(updated.agents.list.find((agent) => agent.id === 'sandbox-xhs-writer').model, 'provider-b/model-b');
+  assert.equal(updated.agents.list.find((agent) => agent.id === 'sandbox-wechat-writer').model, 'provider-b/model-b');
+  assert.equal(updated.agents.list.find((agent) => agent.id === 'sandbox-douyin-writer').model, 'provider-b/model-b');
+  assert.equal(updated.agents.list.find((agent) => agent.id === 'other-agent').model, undefined);
 });

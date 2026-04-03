@@ -44,6 +44,10 @@ function buildModelsJson(providerId, baseUrl, apiKey, modelId, api) {
   };
 }
 
+function buildModelRef(providerId, modelId) {
+  return `${providerId}/${modelId}`;
+}
+
 function writeModelsJson(configDir, agentId, modelsJson) {
   const filePath = path.join(configDir, 'agents', agentId, 'agent', 'models.json');
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -63,7 +67,13 @@ async function askModelConfig(rl, groupName) {
   const apiInput = await ask(rl, '  API 类型 (默认 openai-completions): ');
   const api = apiInput.trim() || 'openai-completions';
 
-  return buildModelsJson(providerId.trim(), baseUrl.trim(), apiKey.trim(), modelId.trim(), api);
+  const trimmedProviderId = providerId.trim();
+  const trimmedModelId = modelId.trim();
+
+  return {
+    modelRef: buildModelRef(trimmedProviderId, trimmedModelId),
+    modelsJson: buildModelsJson(trimmedProviderId, baseUrl.trim(), apiKey.trim(), trimmedModelId, api),
+  };
 }
 
 function appendEnvVar(envPath, key, value) {
@@ -126,6 +136,44 @@ function installResearcherSkill({ configDir, targetName, downloadUrl = DEFAULT_T
   return skillTargetDir;
 }
 
+function updateAgentModelsInConfig({
+  configPath,
+  targetName,
+  researcherEditorModelRef,
+  writerModelRef,
+}) {
+  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  const agentList = Array.isArray(config.agents?.list)
+    ? config.agents.list
+    : Array.isArray(config.agents)
+      ? config.agents
+      : [];
+
+  const researcherAndEditorIds = new Set([
+    `${targetName}-researcher`,
+    `${targetName}-editor`,
+  ]);
+  const writerIds = new Set([
+    `${targetName}-toutiao-writer`,
+    `${targetName}-xhs-writer`,
+    `${targetName}-wechat-writer`,
+    `${targetName}-douyin-writer`,
+  ]);
+
+  for (const agent of agentList) {
+    if (researcherAndEditorIds.has(agent.id)) {
+      agent.model = researcherEditorModelRef;
+      continue;
+    }
+
+    if (writerIds.has(agent.id)) {
+      agent.model = writerModelRef;
+    }
+  }
+
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
+}
+
 async function runSetup(configDir, context, env = process.env) {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -154,15 +202,23 @@ async function runSetup(configDir, context, env = process.env) {
 
     const researcherEditorModels = await askModelConfig(rl, 'researcher + editor (搜索和审核)');
     for (const agentId of researcherAndEditor) {
-      const filePath = writeModelsJson(configDir, agentId, researcherEditorModels);
+      const filePath = writeModelsJson(configDir, agentId, researcherEditorModels.modelsJson);
       console.log(`  ${agentId}: ${filePath}`);
     }
 
     const writerModels = await askModelConfig(rl, '4 个 writer (今日头条/小红书/微信/抖音)');
     for (const agentId of writers) {
-      const filePath = writeModelsJson(configDir, agentId, writerModels);
+      const filePath = writeModelsJson(configDir, agentId, writerModels.modelsJson);
       console.log(`  ${agentId}: ${filePath}`);
     }
+
+    updateAgentModelsInConfig({
+      configPath: context.configPath,
+      targetName: context.targetName,
+      researcherEditorModelRef: researcherEditorModels.modelRef,
+      writerModelRef: writerModels.modelRef,
+    });
+    console.log(`  已更新 ${context.configPath} 中的 agent model 字段`);
 
     console.log('\n[2/3] 配置 Tavily API Key...');
     const tavilyApiKey = (await ask(rl, '  Tavily API Key: ')).trim();
@@ -201,8 +257,10 @@ if (require.main === module) {
 module.exports = {
   DEFAULT_TAVILY_SKILL_URL,
   appendEnvVar,
+  buildModelRef,
   buildModelsJson,
   installResearcherSkill,
   runSetup,
+  updateAgentModelsInConfig,
   writeModelsJson,
 };
