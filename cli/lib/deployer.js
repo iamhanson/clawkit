@@ -91,23 +91,39 @@ function getAgentSessionsDir(configDir, agentId) {
   return path.join(configDir, 'agents', agentId, 'sessions');
 }
 
+function getAgentAuthProfilesPath(configDir, agentId) {
+  return path.join(getAgentConfigDir(configDir, agentId), 'auth-profiles.json');
+}
+
+function getMainAuthProfilesPath(configDir) {
+  return getAgentAuthProfilesPath(configDir, 'main');
+}
+
 function buildManagedAgents(configDir, sourceAgents, kitAgents, targetName) {
   const idMap = {};
+  const metadataById = {};
   for (const agent of kitAgents) {
     idMap[agent.id] = getManagedAgentId(targetName, agent.id);
+    metadataById[agent.id] = agent;
   }
 
   return sourceAgents.map((agent) => {
     const shortId = agent.id;
     const managedId = idMap[shortId];
-
-    return {
+    const metadata = metadataById[shortId] || {};
+    const managedAgent = {
       id: managedId,
       workspace: getManagedWorkspacePath(configDir, targetName, shortId),
       subagents: {
         allowAgents: getSourceAllowAgents(agent).map((peerId) => idMap[peerId]),
       },
     };
+
+    if (metadata.tools && typeof metadata.tools === 'object') {
+      managedAgent.tools = clone(metadata.tools);
+    }
+
+    return managedAgent;
   });
 }
 
@@ -260,6 +276,22 @@ function copyWorkspaceTree(sourceDir, targetDir, force) {
   }
 }
 
+function copyAuthProfilesToManagedAgents(plan) {
+  const sourceAuthProfilesPath = getMainAuthProfilesPath(plan.targetConfigDir);
+  if (!fs.existsSync(sourceAuthProfilesPath)) {
+    return;
+  }
+
+  for (const agent of plan.managedAgents) {
+    const targetAuthProfilesPath = getAgentAuthProfilesPath(plan.targetConfigDir, agent.id);
+    if (!plan.force && fs.existsSync(targetAuthProfilesPath)) {
+      continue;
+    }
+    ensureDir(path.dirname(targetAuthProfilesPath));
+    fs.copyFileSync(sourceAuthProfilesPath, targetAuthProfilesPath);
+  }
+}
+
 function validateWritePermissions(plan) {
   const dirsToCheck = [
     path.dirname(plan.configPath),
@@ -293,6 +325,8 @@ function executeDeployment(plan) {
     ensureDir(getAgentConfigDir(plan.targetConfigDir, agent.id));
     ensureDir(getAgentSessionsDir(plan.targetConfigDir, agent.id));
   }
+
+  copyAuthProfilesToManagedAgents(plan);
 
   // Copy all agent SOUL files
   for (const agent of plan.kit.metadata.agents) {

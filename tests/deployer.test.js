@@ -17,6 +17,10 @@ function loadProductKit() {
   return loadKit('product-kit', kitsDir);
 }
 
+function loadHotnewsKit() {
+  return loadKit('hotnews-kit', kitsDir);
+}
+
 test('createDeploymentPlan rewrites ids, routes, and absolute paths', () => {
   const tempDir = makeTempDir();
   const configPath = path.join(tempDir, 'openclaw.json');
@@ -90,6 +94,27 @@ test('createDeploymentPlan supports a custom target name', () => {
   assert.equal(plan.managedAgents[2].workspace, path.join(tempDir, 'workspace-sandbox-qa'));
   assert.equal(plan.sharedWorkspacePath, path.join(tempDir, 'workspace-sandbox-shared'));
   assert.deepEqual(plan.managedAgents[1].subagents.allowAgents, ['sandbox-pm', 'sandbox-qa']);
+});
+
+test('createDeploymentPlan carries per-agent tools.profile from kit metadata', () => {
+  const tempDir = makeTempDir();
+  const configPath = path.join(tempDir, 'openclaw.json');
+
+  fs.writeFileSync(configPath, JSON.stringify({ agents: { defaults: {}, list: [] } }, null, 2));
+
+  const kit = loadHotnewsKit();
+  const plan = createDeploymentPlan({
+    kit,
+    configPath,
+    apply: false,
+    force: false,
+  });
+
+  const researcher = plan.managedAgents.find((agent) => agent.id === 'hotnews-kit-researcher');
+  const editor = plan.managedAgents.find((agent) => agent.id === 'hotnews-kit-editor');
+
+  assert.deepEqual(researcher.tools, { profile: 'full' });
+  assert.deepEqual(editor.tools, { profile: 'full' });
 });
 
 test('dry-run does not write backup or target soul files', () => {
@@ -457,4 +482,38 @@ test('dry-run mode does not execute setup script', () => {
   // Verify the setup script was NOT executed
   const markerPath = path.join(tempDir, 'setup-ran.txt');
   assert.equal(fs.existsSync(markerPath), false, 'setup-ran.txt should not exist in dry-run mode');
+});
+
+test('apply mode copies main auth-profiles.json into managed agent dirs', () => {
+  const tempDir = makeTempDir();
+  const configPath = path.join(tempDir, 'openclaw.json');
+  const mainAuthDir = path.join(tempDir, 'agents', 'main', 'agent');
+  const mainAuthPath = path.join(mainAuthDir, 'auth-profiles.json');
+
+  fs.writeFileSync(configPath, JSON.stringify({ agents: { defaults: {}, list: [] } }, null, 2));
+  fs.mkdirSync(mainAuthDir, { recursive: true });
+  fs.writeFileSync(
+    mainAuthPath,
+    JSON.stringify({ version: 1, profiles: { demo: { type: 'api_key', key: 'demo-key' } } }, null, 2),
+    'utf8',
+  );
+
+  const kit = loadProductKit();
+  const plan = createDeploymentPlan({
+    kit,
+    configPath,
+    apply: true,
+    force: false,
+  });
+
+  executeDeployment(plan);
+
+  const pmAuthPath = path.join(tempDir, 'agents', 'product-kit-pm', 'agent', 'auth-profiles.json');
+  const devAuthPath = path.join(tempDir, 'agents', 'product-kit-dev', 'agent', 'auth-profiles.json');
+  const qaAuthPath = path.join(tempDir, 'agents', 'product-kit-qa', 'agent', 'auth-profiles.json');
+
+  assert.equal(fs.existsSync(pmAuthPath), true);
+  assert.equal(fs.existsSync(devAuthPath), true);
+  assert.equal(fs.existsSync(qaAuthPath), true);
+  assert.equal(fs.readFileSync(pmAuthPath, 'utf8'), fs.readFileSync(mainAuthPath, 'utf8'));
 });

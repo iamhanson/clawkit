@@ -4,12 +4,12 @@
   "displayName": "Hot News Multi-Platform Content Creator",
   "description": "Search news and create platform-specific articles for Toutiao, Xiaohongshu, WeChat, and Douyin",
   "agents": [
-    { "id": "researcher", "role": "News Researcher", "soulFile": "agents/researcher/SOUL.md", "allowAgents": ["toutiao-writer", "xhs-writer", "wechat-writer", "douyin-writer"] },
-    { "id": "toutiao-writer", "role": "Toutiao Writer", "soulFile": "agents/toutiao-writer/SOUL.md", "allowAgents": ["editor"] },
-    { "id": "xhs-writer", "role": "Xiaohongshu Writer", "soulFile": "agents/xhs-writer/SOUL.md", "allowAgents": ["editor"] },
-    { "id": "wechat-writer", "role": "WeChat Writer", "soulFile": "agents/wechat-writer/SOUL.md", "allowAgents": ["editor"] },
-    { "id": "douyin-writer", "role": "Douyin Script Writer", "soulFile": "agents/douyin-writer/SOUL.md", "allowAgents": ["editor"] },
-    { "id": "editor", "role": "Content Editor", "soulFile": "agents/editor/SOUL.md", "allowAgents": ["researcher"] }
+    { "id": "researcher", "role": "News Researcher", "soulFile": "agents/researcher/SOUL.md", "allowAgents": ["toutiao-writer", "xhs-writer", "wechat-writer", "douyin-writer"], "tools": { "profile": "full" } },
+    { "id": "toutiao-writer", "role": "Toutiao Writer", "soulFile": "agents/toutiao-writer/SOUL.md", "allowAgents": ["editor"], "tools": { "profile": "full" } },
+    { "id": "xhs-writer", "role": "Xiaohongshu Writer", "soulFile": "agents/xhs-writer/SOUL.md", "allowAgents": ["editor"], "tools": { "profile": "full" } },
+    { "id": "wechat-writer", "role": "WeChat Writer", "soulFile": "agents/wechat-writer/SOUL.md", "allowAgents": ["editor"], "tools": { "profile": "full" } },
+    { "id": "douyin-writer", "role": "Douyin Script Writer", "soulFile": "agents/douyin-writer/SOUL.md", "allowAgents": ["editor"], "tools": { "profile": "full" } },
+    { "id": "editor", "role": "Content Editor", "soulFile": "agents/editor/SOUL.md", "allowAgents": ["researcher"], "tools": { "profile": "full" } }
   ],
   "sharedWorkspace": "workspace-shared",
   "setup": "setup.js"
