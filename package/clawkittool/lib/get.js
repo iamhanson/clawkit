@@ -7,6 +7,70 @@ function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
 }
 
+function resolveOpenClawConfigFile(candidatePath) {
+  if (!candidatePath) {
+    return null;
+  }
+
+  const resolvedPath = path.resolve(candidatePath);
+  if (!fs.existsSync(resolvedPath)) {
+    return null;
+  }
+
+  const stats = fs.statSync(resolvedPath);
+  if (stats.isDirectory()) {
+    const configPath = path.join(resolvedPath, 'openclaw.json');
+    return fs.existsSync(configPath) ? configPath : null;
+  }
+
+  return path.basename(resolvedPath) === 'openclaw.json' ? resolvedPath : null;
+}
+
+function detectOpenClawConfigPath({
+  explicitConfigPath = null,
+  env = process.env,
+  homeDir = os.homedir(),
+  platform = process.platform,
+} = {}) {
+  const explicitMatch = resolveOpenClawConfigFile(explicitConfigPath);
+  if (explicitMatch) {
+    return explicitMatch;
+  }
+
+  const envCandidates = [
+    env.OPENCLAW_HOME,
+    env.OPENCLAW_CONFIG_DIR,
+    env.OPENCLAW_CONFIG_PATH,
+  ];
+
+  for (const candidate of envCandidates) {
+    const envMatch = resolveOpenClawConfigFile(candidate);
+    if (envMatch) {
+      return envMatch;
+    }
+  }
+
+  const defaultCandidates =
+    platform === 'win32'
+      ? [
+          path.join(homeDir, '.openclaw'),
+          env.APPDATA ? path.join(env.APPDATA, 'openclaw') : null,
+        ]
+      : [
+          path.join(homeDir, '.openclaw'),
+          path.join(homeDir, '.config', 'openclaw'),
+        ];
+
+  for (const candidate of defaultCandidates) {
+    const defaultMatch = resolveOpenClawConfigFile(candidate);
+    if (defaultMatch) {
+      return defaultMatch;
+    }
+  }
+
+  return null;
+}
+
 function makeTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'clawkittool-'));
 }
@@ -184,12 +248,40 @@ function runInstall(targetDir) {
   }
 }
 
+function runDeploy({ targetDir, kitName, configPath, targetName = null, force = false }) {
+  const nodeCommand = process.execPath;
+  const deployArgs = [path.join(targetDir, 'cli', 'index.js'), 'deploy', kitName, '--config', configPath, '--apply'];
+
+  if (targetName) {
+    deployArgs.push('--target-name', targetName);
+  }
+
+  if (force) {
+    deployArgs.push('--force');
+  }
+
+  const result = spawnSync(nodeCommand, deployArgs, {
+    cwd: targetDir,
+    stdio: 'inherit',
+  });
+
+  if (result.status !== 0) {
+    throw new Error(`clawkit deploy failed for ${kitName}`);
+  }
+}
+
 async function installKitFromManifest({
   kitName,
   targetDir,
   manifestSource,
   force = false,
   skipInstall = false,
+  explicitConfigPath = null,
+  skipDeploy = false,
+  targetName = null,
+  env = process.env,
+  homeDir = os.homedir(),
+  deployRunner = runDeploy,
 }) {
   const manifest = await loadManifest(manifestSource);
   const kitEntry = manifest.kits[kitName];
@@ -205,6 +297,11 @@ async function installKitFromManifest({
   const coreExtractDir = path.join(tempDir, 'core');
   const kitZipPath = path.join(tempDir, `${kitName}.zip`);
   const kitExtractDir = path.join(tempDir, kitName);
+  const detectedConfigPath = detectOpenClawConfigPath({
+    explicitConfigPath,
+    env,
+    homeDir,
+  });
 
   try {
     await downloadFile(manifest.core.url, coreZipPath);
@@ -219,9 +316,23 @@ async function installKitFromManifest({
       runInstall(targetDir);
     }
 
+    let deployed = false;
+    if (!skipDeploy && detectedConfigPath) {
+      deployRunner({
+        targetDir,
+        kitName,
+        configPath: detectedConfigPath,
+        targetName,
+        force,
+      });
+      deployed = true;
+    }
+
     return {
       kitName,
       targetDir,
+      detectedConfigPath,
+      deployed,
     };
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
@@ -229,6 +340,7 @@ async function installKitFromManifest({
 }
 
 module.exports = {
+  detectOpenClawConfigPath,
   installKitFromManifest,
   loadManifest,
 };
