@@ -8,20 +8,24 @@
       "id": "pm",
       "role": "Product Manager",
       "soulFile": "agents/pm/SOUL.md",
-      "allowAgents": ["dev"]
+      "allowAgents": ["dev"],
+      "tools": { "profile": "full" }
     },
     {
       "id": "dev",
       "role": "Developer",
       "soulFile": "agents/dev/SOUL.md",
-      "allowAgents": ["pm", "qa"]
+      "allowAgents": ["pm", "qa"],
+      "tools": { "profile": "full" }
     },
     {
       "id": "qa",
       "role": "QA Tester",
       "soulFile": "agents/qa/SOUL.md",
-      "allowAgents": ["dev", "pm"]
+      "allowAgents": ["dev", "pm"],
+      "tools": { "profile": "full" }
     }
   ],
-  "sharedWorkspace": "workspace-shared"
+  "sharedWorkspace": "workspace-shared",
+  "setup": "setup.js"
 }

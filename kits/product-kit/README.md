@@ -1,18 +1,22 @@
 # Product Kit
 
-这个示例描述了一套轻量的产品交付工作流，包含 3 个智能体：
+这个 kit 描述了一套轻量的产品研发闭环，多 Agent 分工如下：
 
 - `pm`：产品经理
 - `dev`：研发
 - `qa`：测试
 
-老板是工作流之外的人类用户。智能体之间按固定链路通信：
+老板是工作流之外的人类用户，入口固定为 `pm`。
+
+## 通信链路
+
+主流程：
 
 ```text
 Boss -> pm -> dev -> qa -> pm -> Boss
 ```
 
-缺陷回路是：
+缺陷回路：
 
 ```text
 qa -> dev
@@ -20,52 +24,101 @@ qa -> pm
 dev -> qa
 ```
 
-## 允许的通信路径
+允许的内部路由：
 
 - `pm -> dev`
 - `dev -> pm, qa`
 - `qa -> dev, pm`
 
-## 目录结构
+## 部署后的目录结构
 
-- `workspace-pm/SOUL.md`：产品经理角色定义和工作上下文
-- `workspace-dev/SOUL.md`：研发角色定义和工作上下文
-- `workspace-qa/SOUL.md`：测试角色定义和工作上下文
-- `workspace-shared/briefs/`：`pm` 输出的正式需求
-- `workspace-shared/schedules/`：`dev` 输出的评估与排期
-- `workspace-shared/deliveries/`：`dev` 输出的交付说明
-- `workspace-shared/tests/`：`qa` 输出的测试结论
-- `workspace-shared/reports/`：`pm` 输出的最终验收汇报
+部署到目标 OpenClaw 环境后，会生成：
+
+- `workspace-<target>-pm/SOUL.md`
+- `workspace-<target>-dev/SOUL.md`
+- `workspace-<target>-qa/SOUL.md`
+- `workspace-<target>-shared/briefs/`
+- `workspace-<target>-shared/schedules/`
+- `workspace-<target>-shared/deliveries/`
+- `workspace-<target>-shared/tests/`
+- `workspace-<target>-shared/reports/`
+
+其中：
+
+- `pm` 在 shared 的 `briefs/` 和 `reports/` 中写正式交接物
+- `dev` 在 shared 的 `schedules/` 和 `deliveries/` 中写正式交接物
+- `qa` 在 shared 的 `tests/` 中写正式交接物
+
+## kit 源文件结构
+
+仓库里的模板文件位于：
+
+- `agents/pm/SOUL.md`
+- `agents/dev/SOUL.md`
+- `agents/qa/SOUL.md`
+- `workspace-shared/`
+
+部署器会把这些模板复制到目标 OpenClaw 目录，并改写成带 `target-name` 的实际路径。
 
 ## 使用方法
 
-1. 先检查每个 `SOUL.md`，按你的团队风格调整措辞
-2. 把 `examples/product-cycle/...` 这类示例路径替换成你自己的实际路径
-3. 保持每个智能体的 `SOUL.md` 位于各自 workspace 根目录
-4. 把配置加载进 OpenClaw，运行前确认 `allowAgents` 路由是否正确
+先执行 dry-run：
 
-## 适配真实 OpenClaw 环境
+```bash
+clawkit deploy product-kit --config ~/.openclaw
+```
 
-如果你的 OpenClaw 环境要求使用绝对路径，请把下面这些示例路径：
+确认无误后正式部署：
 
-- `examples/product-cycle/workspace-pm`
-- `examples/product-cycle/workspace-dev`
-- `examples/product-cycle/workspace-qa`
-- `examples/product-cycle/workspace-shared`
+```bash
+clawkit deploy product-kit --config ~/.openclaw --apply
+```
 
-替换成你在 `~/.openclaw/` 环境中的真实路径。
+如果要用自定义前缀：
 
-这个示例为了便于展示，保留了仓库内相对路径；真实部署通常应该使用绝对路径。
+```bash
+clawkit deploy product-kit --config ~/.openclaw --target-name sandbox --apply
+```
 
-## Setup 脚本
+部署后，实际 agent id 会变成：
 
-这个 kit 带了一个 `setup.example.js` 示例脚本，用来演示部署后如何继续配置模型和技能。
+- `sandbox-pm`
+- `sandbox-dev`
+- `sandbox-qa`
 
-使用方法：
+## 工具画像
 
-1. 复制示例脚本：`cp setup.example.js setup.js`
-2. 按需要调整模型和技能配置
-3. 在 `kit.json` 中加入 `"setup": "setup.js"`
-4. 执行部署：`clawkit deploy product-kit --config ~/.openclaw --apply`
+这个 kit 的 3 个 agent 都显式声明了：
 
-部署完成后，setup 脚本会自动运行，并为各个智能体补充模型和技能配置。
+```json
+{
+  "tools": {
+    "profile": "full"
+  }
+}
+```
+
+这样可以减少不同 OpenClaw 环境默认工具配置不一致带来的运行偏差。
+
+## 默认 Setup
+
+这个 kit 现在自带可执行的 [setup.js](/Users/hanson/Documents/work/openclawstudy/kits/product-kit/setup.js)。
+
+它的默认行为是：
+
+1. 只收集 **一套** 模型与认证信息
+2. 把同一套模型配置应用到 `pm/dev/qa`
+3. 仍然给每个 agent 各自生成独立文件：
+   - `agents/<agentId>/agent/models.json`
+   - `agents/<agentId>/agent/auth-profiles.json`
+
+这样默认配置最简单，但后续你仍然可以按 agent 单独改文件。
+
+部署时会同步更新：
+
+- `openclaw.json` 里的 `agent.model`
+- 各 agent 自己目录下的 `models.json`
+- 各 agent 自己目录下的 `auth-profiles.json`
+
+如果你想看一个更偏“模板/二次开发”的版本，可以参考：
+[setup.example.js](/Users/hanson/Documents/work/openclawstudy/kits/product-kit/setup.example.js)

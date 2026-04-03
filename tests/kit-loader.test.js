@@ -32,6 +32,9 @@ test('loadKit succeeds for product-kit', () => {
   assert.equal(kit.metadata.agents[0].id, 'pm');
   assert.equal(kit.metadata.agents[1].id, 'dev');
   assert.equal(kit.metadata.agents[2].id, 'qa');
+  assert.deepEqual(kit.metadata.agents[0].tools, { profile: 'full' });
+  assert.deepEqual(kit.metadata.agents[1].tools, { profile: 'full' });
+  assert.deepEqual(kit.metadata.agents[2].tools, { profile: 'full' });
   assert.deepEqual(kit.config.agents.defaults, {});
   assert.deepEqual(
     kit.config.agents.list.find((agent) => agent.id === 'dev').subagents.allowAgents,
