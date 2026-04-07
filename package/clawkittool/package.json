@@ -1,6 +1,6 @@
 {
   "name": "clawkittool",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "On-demand installer for OpenClaw ClawKit workflow kits",
   "bin": {
     "clawkittool": "./bin/clawkittool.js"
