@@ -13,7 +13,7 @@
 ```bash
 clawkittool get product-kit
 clawkittool get hotnews-kit --dir ./my-clawkit
-clawkittool get product-kit --manifest https://example.com/clawkit/manifest.json
+clawkittool get product-kit --manifest https://github.com/iamhanson/clawkit/releases/download/v0.1.0/manifest.json
 clawkittool get product-kit --config ~/.openclaw
 clawkittool get product-kit --target-name sandbox
 ```
@@ -69,7 +69,7 @@ clawkittool get product-kit --skip-install --skip-deploy
 如果你把 `core.zip`、`product-kit.zip`、`hotnews-kit.zip` 上传到 GitHub Release，可以让构建脚本直接生成对应的 manifest：
 
 ```bash
-CLAWKIT_GITHUB_REPO=hanson/openclawstudy \
+CLAWKIT_GITHUB_REPO=iamhanson/clawkit \
 CLAWKIT_GITHUB_TAG=v0.1.0 \
 npm run build:distribution
 ```
@@ -84,7 +84,7 @@ npm run build:distribution
 PowerShell 示例：
 
 ```powershell
-$env:CLAWKIT_GITHUB_REPO = "hanson/openclawstudy"
+$env:CLAWKIT_GITHUB_REPO = "iamhanson/clawkit"
 $env:CLAWKIT_GITHUB_TAG = "v0.1.0"
 npm run build:distribution
 ```
@@ -94,11 +94,11 @@ npm run build:distribution
 ```json
 {
   "core": {
-    "url": "https://github.com/hanson/openclawstudy/releases/download/v0.1.0/core.zip"
+    "url": "https://github.com/iamhanson/clawkit/releases/download/v0.1.0/core.zip"
   },
   "kits": {
     "product-kit": {
-      "url": "https://github.com/hanson/openclawstudy/releases/download/v0.1.0/product-kit.zip"
+      "url": "https://github.com/iamhanson/clawkit/releases/download/v0.1.0/product-kit.zip"
     }
   }
 }

@@ -26,7 +26,7 @@ Kit 让你可以直接复用已经验证过的多智能体模式，不用每次�
 
 ```bash
 # 克隆仓库
-git clone https://github.com/hanson/openclawstudy.git
+git clone https://github.com/iamhanson/clawkit.git
 cd openclawstudy
 
 # 运行测试
@@ -56,7 +56,7 @@ node cli/index.js deploy product-kit --config ~/.openclaw --apply
 npm install -g clawkittool
 
 clawkittool get product-kit \
-  --manifest https://github.com/<你的用户名>/<你的仓库>/releases/download/v0.1.0/manifest.json
+  --manifest https://github.com/iamhanson/clawkit/releases/download/v0.1.0/manifest.json
 ```
 
 安装器默认会：
@@ -70,7 +70,7 @@ clawkittool get product-kit \
 
 ```bash
 clawkittool get product-kit \
-  --manifest https://github.com/<你的用户名>/<你的仓库>/releases/download/v0.1.0/manifest.json \
+  --manifest https://github.com/iamhanson/clawkit/releases/download/v0.1.0/manifest.json \
   --skip-install \
   --skip-deploy
 ```
@@ -213,7 +213,7 @@ npm run build:distribution
 如果要把产物发布到 GitHub Release，可以这样构建：
 
 ```bash
-CLAWKIT_GITHUB_REPO=hanson/openclawstudy \
+CLAWKIT_GITHUB_REPO=iamhanson/clawkit \
 CLAWKIT_GITHUB_TAG=v0.1.0 \
 npm run build:distribution
 ```
