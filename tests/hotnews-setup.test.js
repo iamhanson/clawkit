@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
 
+const { createZipFromDir } = require('../cli/lib/archive');
 const {
   appendEnvVar,
   DEFAULT_OPENAI_COMPAT_BASE_URL,
@@ -24,15 +24,7 @@ function createSkillArchive(zipPath) {
   const rootDir = path.join(sourceDir, 'openclaw-tavily-search');
   fs.mkdirSync(rootDir, { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'SKILL.md'), '# Tavily Search\n', 'utf8');
-
-  const result = spawnSync('zip', ['-qr', zipPath, 'openclaw-tavily-search'], {
-    cwd: sourceDir,
-    encoding: 'utf8',
-  });
-
-  if (result.status !== 0) {
-    throw new Error(`Failed to create zip fixture: ${result.stderr || result.stdout}`);
-  }
+  createZipFromDir(sourceDir, zipPath);
 }
 
 test('appendEnvVar creates .env when missing', () => {
@@ -121,7 +113,7 @@ test('writeAuthProfilesJson writes auth-profiles.json into current agent dir', (
   });
 });
 
-test('installResearcherSkill downloads and extracts into tavily-search directory', () => {
+test('installResearcherSkill downloads and extracts into tavily-search directory', async () => {
   const tempDir = makeTempDir();
   const configDir = path.join(tempDir, '.openclaw');
   const zipPath = path.join(tempDir, 'tavily-search.zip');
@@ -130,7 +122,7 @@ test('installResearcherSkill downloads and extracts into tavily-search directory
   fs.mkdirSync(path.join(configDir, `workspace-${targetName}-researcher`), { recursive: true });
   createSkillArchive(zipPath);
 
-  installResearcherSkill({
+  await installResearcherSkill({
     configDir,
     targetName,
     downloadUrl: `file://${zipPath}`,

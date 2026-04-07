@@ -3,7 +3,7 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { createZipFromDir } = require('../cli/lib/archive');
 
 const CORE_ENTRIES = [
   'cli',
@@ -37,18 +37,6 @@ function copyEntry(sourcePath, targetPath) {
 
   ensureDir(path.dirname(targetPath));
   fs.copyFileSync(sourcePath, targetPath);
-}
-
-function createZipFromDir(sourceDir, zipPath) {
-  ensureDir(path.dirname(zipPath));
-  const result = spawnSync('zip', ['-qr', zipPath, '.'], {
-    cwd: sourceDir,
-    encoding: 'utf8',
-  });
-
-  if (result.status !== 0) {
-    throw new Error(`Failed to create zip archive: ${result.stderr || result.stdout}`);
-  }
 }
 
 function buildCoreArchive(repoRoot, outputDir) {

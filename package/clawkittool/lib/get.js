@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { extractZip } = require('./archive');
 
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
@@ -130,35 +131,6 @@ async function downloadFile(source, targetPath) {
 
   fs.copyFileSync(path.resolve(source), targetPath);
   return targetPath;
-}
-
-function extractZip(zipPath, targetDir) {
-  ensureDir(targetDir);
-
-  if (process.platform === 'win32') {
-    const result = spawnSync(
-      'powershell.exe',
-      [
-        '-NoProfile',
-        '-Command',
-        `Expand-Archive -LiteralPath '${zipPath.replace(/'/g, "''")}' -DestinationPath '${targetDir.replace(/'/g, "''")}' -Force`,
-      ],
-      { encoding: 'utf8' },
-    );
-
-    if (result.status !== 0) {
-      throw new Error(`Failed to extract zip archive: ${result.stderr || result.stdout}`);
-    }
-    return;
-  }
-
-  const result = spawnSync('unzip', ['-qo', zipPath, '-d', targetDir], {
-    encoding: 'utf8',
-  });
-
-  if (result.status !== 0) {
-    throw new Error(`Failed to extract zip archive: ${result.stderr || result.stdout}`);
-  }
 }
 
 function listMeaningfulEntries(dirPath) {

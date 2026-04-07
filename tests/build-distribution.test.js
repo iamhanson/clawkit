@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
+const { createZipFromDir } = require('../cli/lib/archive');
 const {
   buildDistribution,
   createManifest,
@@ -74,4 +75,28 @@ test('buildDistribution creates core zip, kit zips, and manifest', () => {
   assert.equal(manifest.core.url, 'https://example.com/dist/core.zip');
   assert.equal(manifest.kits['product-kit'].url, 'https://example.com/dist/kits/product-kit.zip');
   assert.equal(result.kitNames.includes('product-kit'), true);
+});
+
+test('createZipFromDir uses PowerShell on Windows', () => {
+  const calls = [];
+  const tempDir = makeTempDir();
+  const sourceDir = path.join(tempDir, 'source');
+  const zipPath = path.join(tempDir, 'dist', 'core.zip');
+
+  fs.mkdirSync(sourceDir, { recursive: true });
+  fs.writeFileSync(path.join(sourceDir, 'README.md'), '# fixture\n', 'utf8');
+
+  createZipFromDir(sourceDir, zipPath, {
+    platform: 'win32',
+    spawnSyncImpl: (command, args, options) => {
+      calls.push({ command, args, options });
+      return { status: 0, stdout: '', stderr: '' };
+    },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].command, 'powershell.exe');
+  assert.deepEqual(calls[0].args.slice(0, 2), ['-NoProfile', '-Command']);
+  assert.match(calls[0].args[2], /Compress-Archive/);
+  assert.match(calls[0].args[2], /core\.zip/);
 });

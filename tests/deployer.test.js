@@ -386,6 +386,66 @@ test('product-kit soul files enforce handoff and reporting rules', () => {
   assert.match(qaSoul, /When the scoped checks pass, explicitly tell `pm` that the work is ready to launch/);
 });
 
+test('hotnews-kit soul files enforce writer-to-editor handoff and review coordination', () => {
+  const researcherSoul = fs.readFileSync(
+    path.join(__dirname, '..', 'kits', 'hotnews-kit', 'agents', 'researcher', 'SOUL.md'),
+    'utf8',
+  );
+  const toutiaoSoul = fs.readFileSync(
+    path.join(__dirname, '..', 'kits', 'hotnews-kit', 'agents', 'toutiao-writer', 'SOUL.md'),
+    'utf8',
+  );
+  const xhsSoul = fs.readFileSync(
+    path.join(__dirname, '..', 'kits', 'hotnews-kit', 'agents', 'xhs-writer', 'SOUL.md'),
+    'utf8',
+  );
+  const wechatSoul = fs.readFileSync(
+    path.join(__dirname, '..', 'kits', 'hotnews-kit', 'agents', 'wechat-writer', 'SOUL.md'),
+    'utf8',
+  );
+  const douyinSoul = fs.readFileSync(
+    path.join(__dirname, '..', 'kits', 'hotnews-kit', 'agents', 'douyin-writer', 'SOUL.md'),
+    'utf8',
+  );
+  const editorSoul = fs.readFileSync(
+    path.join(__dirname, '..', 'kits', 'hotnews-kit', 'agents', 'editor', 'SOUL.md'),
+    'utf8',
+  );
+
+  assert.match(researcherSoul, /Invoke all four writers yourself in the same workflow/);
+  assert.match(researcherSoul, /Do not stop after writing `research\.md` while writer handoff is still pending/);
+  assert.match(toutiaoSoul, /Write a submission marker to `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/toutiao\.md`/);
+  assert.match(xhsSoul, /Write a submission marker to `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/xiaohongshu\.md`/);
+  assert.match(wechatSoul, /Write a submission marker to `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/wechat\.md`/);
+  assert.match(douyinSoul, /Write a submission marker to `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/douyin\.md`/);
+  assert.match(toutiaoSoul, /After writing the final article, immediately notify `editor` in the same workflow/);
+  assert.match(editorSoul, /Treat `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/` as the source of truth/);
+  assert.match(editorSoul, /If fewer than four submissions are present, explicitly report which platform is still missing/);
+});
+
+test('apply mode creates hotnews-kit shared submission workspace', () => {
+  const tempDir = makeTempDir();
+  const configPath = path.join(tempDir, 'openclaw.json');
+
+  fs.writeFileSync(configPath, JSON.stringify({ agents: { defaults: {}, list: [] } }, null, 2));
+
+  const kit = loadHotnewsKit();
+  kit.metadata = { ...kit.metadata, setup: undefined };
+  const plan = createDeploymentPlan({
+    kit,
+    configPath,
+    apply: true,
+    force: false,
+  });
+
+  executeDeployment(plan);
+
+  assert.equal(
+    fs.existsSync(path.join(tempDir, 'workspace-hotnews-kit-shared', 'submissions', '.gitkeep')),
+    true,
+  );
+});
+
 test('executeDeployment runs setup script if present', () => {
   const tempDir = makeTempDir();
   const configPath = path.join(tempDir, 'openclaw.json');

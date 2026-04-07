@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
 
+const { createZipFromDir, extractZip } = require('../package/clawkittool/lib/archive');
 const {
   detectOpenClawConfigPath,
   installKitFromManifest,
@@ -13,17 +13,6 @@ const {
 
 function makeTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'clawkittool-test-'));
-}
-
-function createZipFromDir(sourceDir, zipPath) {
-  const result = spawnSync('zip', ['-qr', zipPath, '.'], {
-    cwd: sourceDir,
-    encoding: 'utf8',
-  });
-
-  if (result.status !== 0) {
-    throw new Error(`Failed to create zip fixture: ${result.stderr || result.stdout}`);
-  }
 }
 
 test('loadManifest reads a local manifest file', async () => {
@@ -158,6 +147,47 @@ test('detectOpenClawConfigPath finds default ~/.openclaw/openclaw.json', () => {
   });
 
   assert.equal(detected, defaultConfigPath);
+});
+
+test('detectOpenClawConfigPath finds %APPDATA%/openclaw/openclaw.json on Windows', () => {
+  const tempDir = makeTempDir();
+  const appDataDir = path.join(tempDir, 'AppData', 'Roaming');
+  const configDir = path.join(appDataDir, 'openclaw');
+  const configPath = path.join(configDir, 'openclaw.json');
+
+  fs.mkdirSync(configDir, { recursive: true });
+  fs.writeFileSync(configPath, JSON.stringify({ agents: { list: [] } }), 'utf8');
+
+  const detected = detectOpenClawConfigPath({
+    env: { APPDATA: appDataDir },
+    homeDir: tempDir,
+    platform: 'win32',
+  });
+
+  assert.equal(detected, configPath);
+});
+
+test('extractZip uses PowerShell on Windows', () => {
+  const calls = [];
+  const tempDir = makeTempDir();
+  const zipPath = path.join(tempDir, 'core.zip');
+  const extractDir = path.join(tempDir, 'extract');
+
+  fs.writeFileSync(zipPath, 'zip fixture', 'utf8');
+
+  extractZip(zipPath, extractDir, {
+    platform: 'win32',
+    spawnSyncImpl: (command, args, options) => {
+      calls.push({ command, args, options });
+      return { status: 0, stdout: '', stderr: '' };
+    },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].command, 'powershell.exe');
+  assert.deepEqual(calls[0].args.slice(0, 2), ['-NoProfile', '-Command']);
+  assert.match(calls[0].args[2], /Expand-Archive/);
+  assert.match(calls[0].args[2], /core\.zip/);
 });
 
 test('installKitFromManifest auto-deploys when OpenClaw config is detected', async () => {

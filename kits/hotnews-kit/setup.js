@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const { spawnSync } = require('child_process');
+const { extractZip } = require('../../cli/lib/archive');
 
 const DEFAULT_TAVILY_SKILL_URL =
   'https://wry-manatee-359.convex.site/api/v1/download?slug=openclaw-tavily-search';
@@ -136,7 +136,29 @@ function resolveExtractedSkillDir(extractDir) {
   return extractDir;
 }
 
-function installResearcherSkill({ configDir, targetName, downloadUrl = DEFAULT_TAVILY_SKILL_URL }) {
+async function downloadFile(source, targetPath) {
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+
+  if (/^file:\/\//.test(source)) {
+    fs.copyFileSync(new URL(source), targetPath);
+    return targetPath;
+  }
+
+  if (/^https?:\/\//.test(source)) {
+    const response = await fetch(source);
+    if (!response.ok) {
+      throw new Error(`Failed to download ${source}: ${response.status} ${response.statusText}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    fs.writeFileSync(targetPath, Buffer.from(arrayBuffer));
+    return targetPath;
+  }
+
+  fs.copyFileSync(path.resolve(source), targetPath);
+  return targetPath;
+}
+
+async function installResearcherSkill({ configDir, targetName, downloadUrl = DEFAULT_TAVILY_SKILL_URL }) {
   const researcherWorkspace = path.join(configDir, `workspace-${targetName}-researcher`);
   const skillsDir = path.join(researcherWorkspace, 'skills');
   const zipPath = path.join(skillsDir, 'tavily-search.zip');
@@ -147,21 +169,8 @@ function installResearcherSkill({ configDir, targetName, downloadUrl = DEFAULT_T
   fs.rmSync(extractDir, { recursive: true, force: true });
   fs.mkdirSync(extractDir, { recursive: true });
 
-  const downloadResult = spawnSync('curl', ['-fsSL', '-o', zipPath, downloadUrl], {
-    encoding: 'utf8',
-  });
-
-  if (downloadResult.status !== 0) {
-    throw new Error(`Failed to download tavily-search skill from ${downloadUrl}`);
-  }
-
-  const unzipResult = spawnSync('unzip', ['-qo', zipPath, '-d', extractDir], {
-    encoding: 'utf8',
-  });
-
-  if (unzipResult.status !== 0) {
-    throw new Error(`Failed to unzip tavily-search skill archive: ${unzipResult.stderr || unzipResult.stdout}`);
-  }
+  await downloadFile(downloadUrl, zipPath);
+  extractZip(zipPath, extractDir);
 
   const extractedDir = resolveExtractedSkillDir(extractDir);
   fs.rmSync(skillTargetDir, { recursive: true, force: true });
@@ -271,7 +280,7 @@ async function runSetup(configDir, context, env = process.env) {
     console.log(`  已追加到 ${envPath}`);
 
     console.log('\n[3/3] 安装 tavily-search skill...');
-    const skillTargetDir = installResearcherSkill({
+    const skillTargetDir = await installResearcherSkill({
       configDir,
       targetName: context.targetName,
       downloadUrl: env.HOTNEWS_TAVILY_SKILL_URL || DEFAULT_TAVILY_SKILL_URL,

@@ -13,15 +13,33 @@ Kit 是一个打包好的多智能体工作流,可以部署到任何 OpenClaw �
 
 Kit 让你可以轻松部署经过验证的多智能体模式,无需从头构建。
 
-## 快速开始
+## 环境要求
+
+- `clawkit` CLI：Node.js `>= 18`
+- `clawkittool` 安装器：Node.js `>= 22`
+- macOS / Linux：`build:distribution` 和 `hotnews-kit/setup.js` 需要系统里有 `zip` / `unzip`
+- Windows：`build:distribution`、`clawkittool get`、`hotnews-kit/setup.js` 使用 PowerShell 内置压缩/解压能力，不再依赖 `curl` / `zip` / `unzip`
+
+## 最新使用方式
+
+### 1. 直接在仓库里使用 `clawkit`
 
 ```bash
 # 克隆仓库
-git clone https://github.com/user/clawkit.git
-cd clawkit
+git clone https://github.com/hanson/openclawstudy.git
+cd openclawstudy
+
+# 运行测试
+npm test
 
 # 列出可用的 kit
 node cli/index.js list
+
+# 查看 kit 详情
+node cli/index.js info product-kit
+
+# 校验 kit 结构
+node cli/index.js validate product-kit
 
 # 预览部署效果 (dry-run)
 node cli/index.js deploy product-kit --config ~/.openclaw
@@ -30,13 +48,91 @@ node cli/index.js deploy product-kit --config ~/.openclaw
 node cli/index.js deploy product-kit --config ~/.openclaw --apply
 ```
 
-或通过 npm 全局安装:
+如果已经全局安装了包,也可以直接用:
 
 ```bash
 npm install -g clawkit
 
 clawkit list
 clawkit deploy product-kit --config ~/.openclaw --apply
+```
+
+### 2. 构建 distribution 产物
+
+```bash
+npm run build:distribution
+```
+
+构建完成后会在 `dist/distribution/` 下生成:
+
+- `core.zip`
+- `manifest.json`
+- `kits/*.zip`
+
+默认情况下, `manifest.json` 会把下载前缀写成 `https://example.com/clawkit`。正式发布前请至少配置下面两种方式之一:
+
+- `CLAWKIT_DIST_BASE_URL`
+- `CLAWKIT_GITHUB_REPO` + `CLAWKIT_GITHUB_TAG`
+
+如果你是发布到自己的静态站点或对象存储,可以这样构建:
+
+```bash
+CLAWKIT_DIST_BASE_URL=https://static.example.com/clawkit
+npm run build:distribution
+```
+
+如果你要把产物发布到 GitHub Release,可以在构建时注入仓库和 tag:
+
+```bash
+CLAWKIT_GITHUB_REPO=hanson/openclawstudy \
+CLAWKIT_GITHUB_TAG=v0.1.0 \
+npm run build:distribution
+```
+
+PowerShell 示例:
+
+```powershell
+$env:CLAWKIT_GITHUB_REPO = "hanson/openclawstudy"
+$env:CLAWKIT_GITHUB_TAG = "v0.1.0"
+npm run build:distribution
+```
+
+### 3. 通过 `clawkittool` 安装 distribution
+
+仓库里附带了一个轻量安装器,适合给最终用户按需下载 kit:
+
+```bash
+# 查看帮助
+node package/clawkittool/bin/clawkittool.js --help
+
+# 从 manifest 下载并安装指定 kit
+node package/clawkittool/bin/clawkittool.js get product-kit \
+  --manifest https://example.com/clawkit/manifest.json
+```
+
+安装器默认会:
+
+- 下载 `core.zip`
+- 下载指定 kit 的 zip
+- 在目标目录执行 `npm install`
+- 自动探测 OpenClaw 配置并尝试执行 `deploy`
+
+OpenClaw 自动探测顺序:
+
+- `--config <path>`
+- `OPENCLAW_HOME`
+- `OPENCLAW_CONFIG_DIR`
+- `OPENCLAW_CONFIG_PATH`
+- macOS / Linux: `~/.openclaw/openclaw.json`、`~/.config/openclaw/openclaw.json`
+- Windows: `%USERPROFILE%\\.openclaw\\openclaw.json`、`%APPDATA%\\openclaw\\openclaw.json`
+
+如果只想下载,不自动执行安装或部署:
+
+```bash
+node package/clawkittool/bin/clawkittool.js get product-kit \
+  --manifest https://example.com/clawkit/manifest.json \
+  --skip-install \
+  --skip-deploy
 ```
 
 ## 可用的 Kit

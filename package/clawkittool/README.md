@@ -2,6 +2,12 @@
 
 按需下载安装 OpenClaw workflow kit 的轻量安装器。
 
+## 环境要求
+
+- Node.js `>= 22`
+- macOS / Linux：系统里需要有 `unzip`
+- Windows：使用 PowerShell 内置解压能力，无需额外安装 `unzip`
+
 ## 使用方式
 
 ```bash
@@ -25,13 +31,21 @@ clawkittool get product-kit --target-name sandbox
 - `OPENCLAW_HOME`
 - `OPENCLAW_CONFIG_DIR`
 - `OPENCLAW_CONFIG_PATH`
-- `~/.openclaw/openclaw.json`
-- `~/.config/openclaw/openclaw.json`
+- macOS / Linux：`~/.openclaw/openclaw.json`
+- macOS / Linux：`~/.config/openclaw/openclaw.json`
+- Windows：`%USERPROFILE%\\.openclaw\\openclaw.json`
+- Windows：`%APPDATA%\\openclaw\\openclaw.json`
 
 如果只想下载但不自动部署，可以加：
 
 ```bash
 clawkittool get product-kit --skip-deploy
+```
+
+如果你也想跳过 `npm install`：
+
+```bash
+clawkittool get product-kit --skip-install --skip-deploy
 ```
 
 ## manifest 格式
@@ -57,6 +71,21 @@ clawkittool get product-kit --skip-deploy
 ```bash
 CLAWKIT_GITHUB_REPO=hanson/openclawstudy \
 CLAWKIT_GITHUB_TAG=v0.1.0 \
+npm run build:distribution
+```
+
+如果不是发 GitHub Release，而是发布到自己的静态站点，也可以直接指定下载前缀：
+
+```bash
+CLAWKIT_DIST_BASE_URL=https://static.example.com/clawkit
+npm run build:distribution
+```
+
+PowerShell 示例：
+
+```powershell
+$env:CLAWKIT_GITHUB_REPO = "hanson/openclawstudy"
+$env:CLAWKIT_GITHUB_TAG = "v0.1.0"
 npm run build:distribution
 ```
 
