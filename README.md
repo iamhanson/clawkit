@@ -20,9 +20,9 @@ Kit 让你可以直接复用已经验证过的多智能体模式，不用每次�
 - macOS / Linux：`build:distribution` 和 `hotnews-kit/setup.js` 需要系统里有 `zip` / `unzip`
 - Windows：`build:distribution`、`clawkittool get`、`hotnews-kit/setup.js` 使用 PowerShell 内置压缩/解压能力，不再依赖 `curl` / `zip` / `unzip`
 
-## 最新使用方式
+## 使用方式
 
-### 1. 直接在仓库里使用 `clawkit`
+### 1. `git clone` 仓库后直接使用 `clawkit`
 
 ```bash
 # 克隆仓库
@@ -48,66 +48,15 @@ node cli/index.js deploy product-kit --config ~/.openclaw
 node cli/index.js deploy product-kit --config ~/.openclaw --apply
 ```
 
-如果已经全局安装了包，也可以直接用：
+### 2. 通过 `npm` 安装 `clawkittool`
+
+适合最终用户按需下载某一个 kit，并尽量自动部署到本机 OpenClaw 环境：
 
 ```bash
-npm install -g clawkit
+npm install -g clawkittool
 
-clawkit list
-clawkit deploy product-kit --config ~/.openclaw --apply
-```
-
-### 2. 构建 distribution 产物
-
-```bash
-npm run build:distribution
-```
-
-构建完成后会在 `dist/distribution/` 下生成：
-
-- `core.zip`
-- `manifest.json`
-- `kits/*.zip`
-
-默认情况下，`manifest.json` 会把下载前缀写成 `https://example.com/clawkit`。正式发布前请至少配置下面两种方式之一：
-
-- `CLAWKIT_DIST_BASE_URL`
-- `CLAWKIT_GITHUB_REPO` + `CLAWKIT_GITHUB_TAG`
-
-如果你是发布到自己的静态站点或对象存储，可以这样构建：
-
-```bash
-CLAWKIT_DIST_BASE_URL=https://static.example.com/clawkit
-npm run build:distribution
-```
-
-如果你要把产物发布到 GitHub Release，可以在构建时注入仓库和 tag：
-
-```bash
-CLAWKIT_GITHUB_REPO=hanson/openclawstudy \
-CLAWKIT_GITHUB_TAG=v0.1.0 \
-npm run build:distribution
-```
-
-PowerShell 示例：
-
-```powershell
-$env:CLAWKIT_GITHUB_REPO = "hanson/openclawstudy"
-$env:CLAWKIT_GITHUB_TAG = "v0.1.0"
-npm run build:distribution
-```
-
-### 3. 通过 `clawkittool` 安装 distribution
-
-仓库里附带了一个轻量安装器，适合给最终用户按需下载 kit：
-
-```bash
-# 查看帮助
-node package/clawkittool/bin/clawkittool.js --help
-
-# 从 manifest 下载并安装指定 kit
-node package/clawkittool/bin/clawkittool.js get product-kit \
-  --manifest https://example.com/clawkit/manifest.json
+clawkittool get product-kit \
+  --manifest https://github.com/<你的用户名>/<你的仓库>/releases/download/v0.1.0/manifest.json
 ```
 
 安装器默认会：
@@ -117,20 +66,11 @@ node package/clawkittool/bin/clawkittool.js get product-kit \
 - 在目标目录执行 `npm install`
 - 自动探测 OpenClaw 配置并尝试执行 `deploy`
 
-OpenClaw 自动探测顺序：
-
-- `--config <path>`
-- `OPENCLAW_HOME`
-- `OPENCLAW_CONFIG_DIR`
-- `OPENCLAW_CONFIG_PATH`
-- macOS / Linux：`~/.openclaw/openclaw.json`、`~/.config/openclaw/openclaw.json`
-- Windows：`%USERPROFILE%\\.openclaw\\openclaw.json`、`%APPDATA%\\openclaw\\openclaw.json`
-
 如果只想下载，不自动执行安装或部署：
 
 ```bash
-node package/clawkittool/bin/clawkittool.js get product-kit \
-  --manifest https://example.com/clawkit/manifest.json \
+clawkittool get product-kit \
+  --manifest https://github.com/<你的用户名>/<你的仓库>/releases/download/v0.1.0/manifest.json \
   --skip-install \
   --skip-deploy
 ```
@@ -252,6 +192,31 @@ ClawKit 默认保留目标环境中已有的 `agents.defaults` 不变。如果�
 完整 kit 规范见 [docs/KIT-SPEC.md](./docs/KIT-SPEC.md)。
 
 ## 发布 distribution 到 GitHub Release
+
+如果你是维护者，需要为 `clawkittool` 提供可下载的 release assets，可以在仓库根目录执行：
+
+```bash
+npm run build:distribution
+```
+
+构建完成后会在 `dist/distribution/` 下生成：
+
+- `core.zip`
+- `manifest.json`
+- `kits/*.zip`
+
+默认情况下，`manifest.json` 会把下载前缀写成 `https://example.com/clawkit`。正式发布前请至少配置下面两种方式之一：
+
+- `CLAWKIT_DIST_BASE_URL`
+- `CLAWKIT_GITHUB_REPO` + `CLAWKIT_GITHUB_TAG`
+
+如果要把产物发布到 GitHub Release，可以这样构建：
+
+```bash
+CLAWKIT_GITHUB_REPO=hanson/openclawstudy \
+CLAWKIT_GITHUB_TAG=v0.1.0 \
+npm run build:distribution
+```
 
 仓库内已经包含自动化 workflow：
 
