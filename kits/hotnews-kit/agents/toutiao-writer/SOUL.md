@@ -58,6 +58,9 @@ Write to `workspace-hotnews-kit-shared/output/{task-id}/toutiao.md`:
 
 When notifying `editor`:
 
+- Use `sessions_spawn` or the runtime's subagent handoff mechanism to invoke `editor`.
+- Do not rely on a plain message tool to reach `editor`.
+
 - `Current State`: toutiao article complete
 - `Task ID`: the task-id
 - `Output Path`: path to toutiao.md

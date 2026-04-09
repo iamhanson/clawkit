@@ -419,6 +419,11 @@ test('hotnews-kit soul files enforce writer-to-editor handoff and review coordin
   assert.match(wechatSoul, /Write a submission marker to `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/wechat\.md`/);
   assert.match(douyinSoul, /Write a submission marker to `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/douyin\.md`/);
   assert.match(toutiaoSoul, /After writing the final article, immediately notify `editor` in the same workflow/);
+  assert.match(toutiaoSoul, /Use `sessions_spawn` or the runtime's subagent handoff mechanism to invoke `editor`/);
+  assert.match(xhsSoul, /Use `sessions_spawn` or the runtime's subagent handoff mechanism to invoke `editor`/);
+  assert.match(wechatSoul, /Use `sessions_spawn` or the runtime's subagent handoff mechanism to invoke `editor`/);
+  assert.match(douyinSoul, /Use `sessions_spawn` or the runtime's subagent handoff mechanism to invoke `editor`/);
+  assert.match(toutiaoSoul, /Do not rely on a plain message tool to reach `editor`/);
   assert.match(editorSoul, /Treat `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/` as the source of truth/);
   assert.match(editorSoul, /If fewer than four submissions are present, explicitly report which platform is still missing/);
 });
