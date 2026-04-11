@@ -1,12 +1,65 @@
 #!/usr/bin/env node
 
 const path = require('node:path');
-const { installKitFromManifest } = require('../lib/get');
+const readline = require('node:readline');
+const { installKitFromManifest, detectOpenClawConfigPath } = require('../lib/get');
 
 function printUsage() {
   console.log(`Usage:
   clawkittool get <kit-name> [--dir <path>] [--manifest <url-or-path>] [--config <path>] [--target-name <name>] [--force] [--skip-install] [--skip-deploy]
 `);
+}
+
+function askQuestion(question) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer);
+    });
+  });
+}
+
+async function promptConfirm(question) {
+  const answer = await askQuestion(`${question} (Y/n): `);
+  const normalized = String(answer || '').trim().toLowerCase();
+  return normalized === '' || normalized === 'y' || normalized === 'yes';
+}
+
+async function promptForConfigPath() {
+  const answer = await askQuestion(
+    'Please enter your OpenClaw config directory or openclaw.json path (leave empty to skip deploy): ',
+  );
+  const trimmed = String(answer || '').trim();
+  return trimmed || null;
+}
+
+async function chooseConfigPathForDeploy({
+  explicitConfigPath = null,
+  detectedConfigPath = null,
+  confirmUseDetected = promptConfirm,
+  promptForConfigPath: promptForConfigPathImpl = promptForConfigPath,
+} = {}) {
+  if (explicitConfigPath) {
+    return explicitConfigPath;
+  }
+
+  if (!detectedConfigPath) {
+    return null;
+  }
+
+  const useDetected = await confirmUseDetected(`Detected OpenClaw config at ${detectedConfigPath}. Use this path for deploy?`);
+  if (useDetected) {
+    return detectedConfigPath;
+  }
+
+  const manualPath = await promptForConfigPathImpl();
+  const normalizedManualPath = typeof manualPath === 'string' ? manualPath.trim() : manualPath;
+  return normalizedManualPath || null;
 }
 
 async function main(argv) {
@@ -82,14 +135,29 @@ async function main(argv) {
     throw new Error('Missing manifest source. Use --manifest or set CLAWKIT_MANIFEST_URL');
   }
 
+  let configPathForDeploy = explicitConfigPath;
+  if (!skipDeploy) {
+    const detectedConfigPath = detectOpenClawConfigPath({
+      explicitConfigPath,
+    });
+    configPathForDeploy = await chooseConfigPathForDeploy({
+      explicitConfigPath,
+      detectedConfigPath,
+    });
+
+    if (!configPathForDeploy && detectedConfigPath && !explicitConfigPath) {
+      console.log('Skipped automatic deploy.');
+    }
+  }
+
   const result = await installKitFromManifest({
     kitName: maybeKitName,
     targetDir,
     manifestSource,
     force,
     skipInstall,
-    explicitConfigPath,
-    skipDeploy,
+    explicitConfigPath: configPathForDeploy,
+    skipDeploy: skipDeploy || !configPathForDeploy,
     targetName,
   });
 
@@ -103,7 +171,16 @@ async function main(argv) {
   }
 }
 
-main(process.argv.slice(2)).catch((error) => {
-  console.error(`clawkittool failed: ${error.message}`);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main(process.argv.slice(2)).catch((error) => {
+    console.error(`clawkittool failed: ${error.message}`);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = {
+  chooseConfigPathForDeploy,
+  main,
+  promptConfirm,
+  promptForConfigPath,
+};

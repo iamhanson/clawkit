@@ -1,36 +1,40 @@
 # HotNews Kit
 
-搜索新闻，并为今日头条、小红书、微信公众号、抖音生成平台专属内容。
+基于 Harness Engineering 思路的热点新闻多平台内容工作流。
 
 ## 智能体
 
-| 智能体 | 角色 | 模型 |
+| 智能体 | 角色 | 职责 |
 |-------|------|------|
-| `researcher` | 使用 tavily-search 搜索新闻并整理素材 | Sonnet |
-| `toutiao-writer` | 生成今日头条风格文章 | Sonnet |
-| `xhs-writer` | 生成小红书风格笔记 | Sonnet |
-| `wechat-writer` | 生成微信公众号文章 | Sonnet |
-| `douyin-writer` | 生成抖音短视频脚本 | Sonnet |
-| `editor` | 审核所有内容并指出问题 | Sonnet |
-
+| `orchestrator` | 工作流调度器 | 唯一入口，创建任务、派工、汇总、返工控制、对用户输出 |
+| `researcher` | 资料研究员 | 搜索新闻素材，输出结构化 research artifacts |
+| `toutiao-writer` | 今日头条写手 | 生成今日头条稿件 |
+| `xhs-writer` | 小红书写手 | 生成小红书笔记 |
+| `wechat-writer` | 微信公众号写手 | 生成微信公众号文章 |
+| `douyin-writer` | 抖音脚本写手 | 生成抖音脚本 |
+| `editor` | 内容审核员 | 统一审核四个平台稿件并输出 review artifacts |
 
 ## 工作流
 
-<img width="1250" height="1826" alt="d739209540b3db9d06a233bfd06ddb0c" src="https://github.com/user-attachments/assets/343e2692-f088-460d-89ba-f12f3fd8d297" />
-
 ```text
-用户 -> researcher -> toutiao-writer \
-                   -> xhs-writer      -> editor -> 用户
-                   -> wechat-writer  /
-                   -> douyin-writer  /
+用户 -> orchestrator -> researcher -> orchestrator
+                                   -> toutiao-writer \
+                                   -> xhs-writer      -> orchestrator -> editor -> orchestrator -> 用户
+                                   -> wechat-writer  /
+                                   -> douyin-writer /
 ```
 
-1. 用户提供新闻标题或链接
-2. `researcher` 作为唯一入口 agent 搜索相关内容，并把素材写入共享工作区
-3. `researcher` 在同一轮工作流里把任务并行分发给四个 writer
-4. 四个 writer 产出平台内容，并在 `submissions/{task-id}/` 下写各自的提交标记
-5. `editor` 以 `submissions/{task-id}/` 为准汇总四个平台稿件，审核后输出结论
-6. 用户收到审核报告和全部输出文件
+1. 用户把新闻标题或链接交给 `orchestrator`
+2. `orchestrator` 创建 `task-id` 并写 `tasks/{task-id}/brief.json`
+3. `orchestrator` 调起 `researcher`
+4. `researcher` 输出 `research.md` 和 `research.json` 后回到 `orchestrator`
+5. `orchestrator` 并行调起四个 writer
+6. 四个 writer 各自产出平台稿件和 `submission.json`
+7. `orchestrator` 确认四个平台都提交后，再统一调起 `editor`
+8. `editor` 输出 `review.md` 和 `review.json`
+9. `orchestrator` 根据 review 结果决定：
+   - 直接交付给用户
+   - 或只重派有问题的平台 writer 进行 revision
 
 ## 前置要求
 
@@ -42,16 +46,22 @@
 ## 使用方法
 
 ```bash
-# 部署 kit
 clawkit deploy hotnews-kit --config ~/.openclaw --apply
-
-# setup 脚本会：
-# 1. 询问两组模型配置
-# 2. 询问 Tavily API Key
-# 3. 把模型写入对应 agent 的 models.json，并同步更新 openclaw.json 中各 agent 的 model 字段
-# 4. 追加 TAVILY_API_KEY 到 ~/.openclaw/.env
-# 5. 下载并安装 tavily-search 到 researcher 的 workspace
 ```
+
+setup 脚本会：
+
+1. 询问两组模型配置
+2. 询问 Tavily API Key
+3. 把模型写入对应 agent 的 `models.json`
+4. 同步更新 `openclaw.json` 中各 agent 的 `model` 字段
+5. 追加 `TAVILY_API_KEY` 到 `~/.openclaw/.env`
+6. 下载并安装 `tavily-search` 到 researcher 的 workspace
+
+模型分组现在是：
+
+- `orchestrator + researcher + editor`
+- `4 个 writer`
 
 Tavily skill 默认安装到：
 
@@ -65,37 +75,64 @@ Tavily skill 默认安装到：
 
 ```text
 workspace-hotnews-kit-shared/
-├── materials/{task-id}/research.md    # 搜索素材
-├── submissions/{task-id}/
-│   ├── toutiao.md                     # writer 提交给 editor 的完成标记
+├── tasks/{task-id}/
+│   └── brief.json
+├── materials/{task-id}/
+│   ├── research.md
+│   └── research.json
+├── output/{task-id}/
+│   ├── toutiao.md
 │   ├── xiaohongshu.md
 │   ├── wechat.md
 │   └── douyin.md
-└── output/{task-id}/
-    ├── toutiao.md                     # 今日头条文章
-    ├── xiaohongshu.md                 # 小红书笔记
-    ├── wechat.md                      # 微信公众号文章
-    ├── douyin.md                      # 抖音脚本
-    └── review.md                      # 审核报告
+├── submissions/{task-id}/
+│   ├── toutiao.json
+│   ├── xiaohongshu.json
+│   ├── wechat.json
+│   └── douyin.json
+└── reviews/{task-id}/
+    ├── review.md
+    └── review.json
 ```
 
 说明：
 
-- 默认只有 `researcher` 作为入口先被触发
-- 四个 writer 和 `editor` 都是收到上游 handoff 后按需参与，不会在部署后自动常驻启动
-- `submissions/{task-id}/` 用来让 `editor` 判断四个平台是否都已完成提交
+- 只有 `orchestrator` 是用户入口
+- `researcher` 不再直接派发 writer
+- writer 不再直接调 `editor`
+- `editor` 不再直接对用户汇报
+- 所有流程推进都回到 `orchestrator`
 
-## 自定义模型
+## Harness 设计意图
 
-如果你要调整模型分配，可以编辑 `setup.js` 里的配置逻辑。例如：
+这个 kit 不再是简单的“researcher 驱动内容流水线”，而是标准的 harness 分层：
 
-```javascript
-const modelConfig = {
-  researcher: 'sonnet',
-  'toutiao-writer': 'haiku',
-  'xhs-writer': 'haiku',
-  'wechat-writer': 'sonnet',
-  'douyin-writer': 'haiku',
-  editor: 'opus',
-};
-```
+- `orchestrator` = 控制层 / planner
+- `researcher + writers` = generator workers
+- `editor` = evaluator
+- `workspace-shared` = artifacts contract
+
+这样做的收益是：
+
+- 用户入口统一
+- handoff 更稳定
+- revision 回路更清晰
+- 更适合做长任务和多轮返工
+
+## Harness 开发要求映射
+
+这个 kit 对根目录中的 Harness 规范，具体落实为：
+
+- `orchestrator` 是唯一 control layer，也是默认用户入口
+- `researcher` 只负责 research，不直接派 writer
+- writer 只负责生成内容，不直接调用 `editor`
+- `editor` 只负责评审，不直接对用户输出最终结果
+- 所有正式推进动作都回到 `orchestrator`
+- 所有正式交接物都写入 shared workspace，对应清晰的 artifact contract
+
+如果你后续扩展这个 kit，建议继续遵守这些约束：
+
+- 新平台优先作为新的 writer 挂到 `orchestrator`
+- 新评审节点优先作为 evaluator 挂到 `orchestrator`
+- 不要把 writer 和 editor 改回互相直连
+- revision、重写、补素材都通过 `orchestrator` 收口

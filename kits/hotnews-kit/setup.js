@@ -184,7 +184,7 @@ async function installResearcherSkill({ configDir, targetName, downloadUrl = DEF
 function updateAgentModelsInConfig({
   configPath,
   targetName,
-  researcherEditorModelRef,
+  orchestratorResearcherEditorModelRef,
   writerModelRef,
 }) {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -194,7 +194,8 @@ function updateAgentModelsInConfig({
       ? config.agents
       : [];
 
-  const researcherAndEditorIds = new Set([
+  const orchestratorResearcherAndEditorIds = new Set([
+    `${targetName}-orchestrator`,
     `${targetName}-researcher`,
     `${targetName}-editor`,
   ]);
@@ -206,8 +207,8 @@ function updateAgentModelsInConfig({
   ]);
 
   for (const agent of agentList) {
-    if (researcherAndEditorIds.has(agent.id)) {
-      agent.model = researcherEditorModelRef;
+    if (orchestratorResearcherAndEditorIds.has(agent.id)) {
+      agent.model = orchestratorResearcherEditorModelRef;
       continue;
     }
 
@@ -228,7 +229,8 @@ async function runSetup(configDir, context, env = process.env) {
   try {
     console.log(`\nSetting up ${context.targetName}...\n`);
 
-    const researcherAndEditor = [
+    const orchestratorResearcherAndEditor = [
+      `${context.targetName}-orchestrator`,
       `${context.targetName}-researcher`,
       `${context.targetName}-editor`,
     ];
@@ -242,13 +244,13 @@ async function runSetup(configDir, context, env = process.env) {
 
     console.log('[1/3] 配置模型...');
     console.log('\n需要配置两组模型:');
-    console.log('  1. researcher + editor (搜索和审核)');
+    console.log('  1. orchestrator + researcher + editor (调度、搜索和审核)');
     console.log('  2. 4 个 writer (内容创作)');
 
-    const researcherEditorModels = await askModelConfig(rl, 'researcher + editor (搜索和审核)');
-    for (const agentId of researcherAndEditor) {
-      const modelPath = writeModelsJson(configDir, agentId, researcherEditorModels.modelsJson);
-      const authPath = writeAuthProfilesJson(configDir, agentId, researcherEditorModels.authProfilesJson);
+    const orchestratorResearcherEditorModels = await askModelConfig(rl, 'orchestrator + researcher + editor (调度、搜索和审核)');
+    for (const agentId of orchestratorResearcherAndEditor) {
+      const modelPath = writeModelsJson(configDir, agentId, orchestratorResearcherEditorModels.modelsJson);
+      const authPath = writeAuthProfilesJson(configDir, agentId, orchestratorResearcherEditorModels.authProfilesJson);
       console.log(`  ${agentId}: ${modelPath}`);
       console.log(`  ${agentId}: ${authPath}`);
     }
@@ -264,7 +266,7 @@ async function runSetup(configDir, context, env = process.env) {
     updateAgentModelsInConfig({
       configPath: context.configPath,
       targetName: context.targetName,
-      researcherEditorModelRef: researcherEditorModels.modelRef,
+      orchestratorResearcherEditorModelRef: orchestratorResearcherEditorModels.modelRef,
       writerModelRef: writerModels.modelRef,
     });
     console.log(`  已更新 ${context.configPath} 中的 agent model 字段`);
