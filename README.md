@@ -319,3 +319,34 @@ git push origin v0.1.0
 ## 许可证
 
 MIT
+
+## Showcase Site
+
+仓库现在包含一个独立的 `React + Vite` 展示站，目录在 `site/`。
+
+本地预览：
+
+```bash
+cd site
+npm install
+npm run dev
+```
+
+构建静态站点：
+
+```bash
+cd site
+npm install
+npm run build
+```
+
+GitHub Pages 发布方式：
+
+1. push 到 `main` 或 `master` 分支后，workflow `.github/workflows/deploy-site.yml` 会自动构建并部署
+2. 到 GitHub 仓库的 `Settings -> Pages`
+3. `Source` 选择 `GitHub Actions`
+4. 等待 `Deploy Showcase Site` workflow 完成后，就可以直接访问 Pages 地址
+
+如果你是项目拥有者，GitHub Pages 地址通常会是：
+
+- `https://<你的用户名>.github.io/<仓库名>/`
