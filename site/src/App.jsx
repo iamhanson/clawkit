@@ -1,42 +1,42 @@
 const principles = [
   {
-    title: 'One Control Layer',
-    text: 'Every workflow has a deliberate owner. Control lives in one place so progression is explicit, not accidental.',
+    title: '唯一控制层',
+    text: '每条工作流都必须有明确的拥有者。流程推进只能发生在一个控制层里，而不是在多个 agent 之间意外漂移。',
   },
   {
-    title: 'Hub-and-Spoke Routing',
-    text: 'Workers do work. They do not secretly become planners. Results always return to the control layer before the next move.',
+    title: 'Hub-and-Spoke 路由',
+    text: 'worker 负责产出，不偷偷接管编排。所有结果都要先回到控制层，再决定下一步怎么走。',
   },
   {
-    title: 'Shared Artifact Contracts',
-    text: 'Formal handoff files live in shared workspaces so tasks remain traceable, reviewable, and recoverable.',
+    title: '共享交接物契约',
+    text: '正式交接文件写入 shared workspace，让任务具备可追溯、可审阅、可恢复的结构，而不是只停留在对话里。',
   },
   {
-    title: 'Clear Failure Loops',
-    text: 'Evaluation, QA, and review outcomes feed back into the orchestrator instead of creating sideways chaos.',
+    title: '清晰的失败回流',
+    text: '评审、测试、审核的结论统一回流到 orchestrator 或 control layer，而不是横向扩散成混乱的返工链路。',
   },
 ];
 
 const primitives = [
   {
     label: 'SOUL.md',
-    title: 'Agent identity with boundaries',
-    text: 'Roles, tone, output structure, forbidden moves, and handoff expectations all live in one file.',
+    title: '带边界的 agent 身份定义',
+    text: '角色、语气、输出结构、禁止事项、交接要求，都沉淀在一个文件里。',
   },
   {
     label: 'kit.json',
-    title: 'Real routing, real topology',
-    text: 'The kit definition declares agent metadata and the actual allow-list graph that controls collaboration.',
+    title: '真实路由，真实拓扑',
+    text: 'kit 定义里不仅有 agent 元数据，还有真正控制协作关系的 allow-list 图。',
   },
   {
     label: 'Shared Workspace',
-    title: 'Artifacts over vibes',
-    text: 'Briefs, schedules, deliveries, reviews, and reports become durable workflow contracts instead of chat-only context.',
+    title: '用 artifacts 代替口头默契',
+    text: 'brief、schedule、delivery、review、report 这些正式交接物，会成为稳定的工作流契约，而不是只留在聊天上下文里。',
   },
   {
     label: 'Setup + Deploy',
-    title: 'Portable into any OpenClaw environment',
-    text: 'Each kit is deployable, configurable, and reproducible without hand-editing a maze of runtime files.',
+    title: '可移植到任何 OpenClaw 环境',
+    text: '每个 kit 都可以被部署、配置、复用，而不需要手工去改一堆运行时文件。',
   },
 ];
 
@@ -45,11 +45,11 @@ const hotnewsArtifacts = ['brief.json', 'research.json', 'submission.json', 'rev
 
 const installCommands = [
   {
-    title: 'Clone And Use ClawKit',
+    title: '克隆仓库后直接使用 ClawKit',
     code: `git clone https://github.com/iamhanson/clawkit.git\ncd openclawstudy\nnode cli/index.js deploy product-kit --config ~/.openclaw --apply`,
   },
   {
-    title: 'Install One Kit With ClawKitTool',
+    title: '通过 ClawKitTool 安装单个 Kit',
     code: `npm install -g clawkittool\nclawkittool get product-kit \\\n  --manifest https://github.com/iamhanson/clawkit/releases/download/v0.1.0/manifest.json`,
   },
 ];
@@ -80,57 +80,56 @@ export default function App() {
           <span className="brand-mark">CK</span>
           <div>
             <strong>ClawKit</strong>
-            <p>Harness-first OpenClaw workflows</p>
+            <p>以 Harness 为核心的 OpenClaw 工作流套件</p>
           </div>
         </div>
         <nav className="topnav">
           <a href="#harness">Harness</a>
-          <a href="#kits">Kits</a>
-          <a href="#install">Install</a>
+          <a href="#kits">案例</a>
+          <a href="#install">安装</a>
         </nav>
       </header>
 
       <main>
         <section className="hero">
           <div className="hero-copy">
-            <SectionTag>Harness At The Center</SectionTag>
+            <SectionTag>Harness 作为中心叙事</SectionTag>
             <h1>
-              Reusable workflow kits for <span>OpenClaw</span>, built around disciplined
-              multi-agent orchestration.
+              面向 <span>OpenClaw</span> 的可复用工作流套件，
+              用 Harness 重构多智能体协作。
             </h1>
             <p className="hero-text">
-              ClawKit turns multi-agent systems into repeatable Harness workflows. Instead of
-              letting agents cross-call each other into a fog of state, it gives every kit a
-              control layer, explicit routing rules, and artifact contracts that make collaboration
-              stable.
+              ClawKit 不是把一堆 agent 拼在一起，而是把多智能体系统收敛成可复用的
+              Harness 工作流。它为每个 kit 明确控制层、通信边界和 artifact contract，
+              让协作关系稳定、可解释、可部署。
             </p>
             <div className="hero-actions">
               <a className="button button-primary" href="https://github.com/iamhanson/clawkit" target="_blank" rel="noreferrer">
-                View GitHub
+                查看 GitHub
               </a>
               <a className="button button-secondary" href="#install">
-                Quick Start
+                快速开始
               </a>
             </div>
             <div className="hero-metrics">
               <div>
                 <span className="metric-value">2</span>
-                <span className="metric-label">Reference Kits</span>
+                <span className="metric-label">参考 Kit</span>
               </div>
               <div>
                 <span className="metric-value">1</span>
-                <span className="metric-label">Control Layer Per Workflow</span>
+                <span className="metric-label">每条工作流一个控制层</span>
               </div>
               <div>
                 <span className="metric-value">6</span>
-                <span className="metric-label">Harness Rules In The Repo</span>
+                <span className="metric-label">仓库内 Harness 规则</span>
               </div>
             </div>
           </div>
 
           <div className="hero-diagram">
             <div className="diagram-frame">
-              <div className="diagram-header">Harness Topology</div>
+              <div className="diagram-header">Harness 拓扑</div>
               <div className="diagram-core">Control Layer</div>
               <div className="diagram-workers">
                 <span>Workers</span>
@@ -147,11 +146,11 @@ export default function App() {
 
         <section className="section-block primitives">
           <div className="section-heading">
-            <SectionTag>Project Primitives</SectionTag>
-            <h2>ClawKit is more than agent prompts.</h2>
+            <SectionTag>项目基础构件</SectionTag>
+            <h2>ClawKit 不是 prompt 文件的堆砌。</h2>
             <p>
-              A kit is a portable workflow system: personality files, routing rules, artifact
-              conventions, and deployment hooks all moving together.
+              一个 kit 是一整套可移植的工作流系统：人格定义、通信规则、交接契约、部署钩子，
+              都作为一个整体协同存在。
             </p>
           </div>
           <div className="card-grid four-up">
@@ -168,10 +167,10 @@ export default function App() {
         <section className="section-block harness-first" id="harness">
           <div className="section-heading narrow">
             <SectionTag>Harness First</SectionTag>
-            <h2>The repo is organized around control, not agent sprawl.</h2>
+            <h2>这个仓库围绕“控制”组织，而不是围绕 agent 蔓延。</h2>
             <p>
-              Harness is not a side note in ClawKit. It is the design grammar that shapes how kits
-              are authored, how communication is constrained, and how work becomes observable.
+              在 ClawKit 里，Harness 不是附带概念，而是设计语法。它决定 kit 怎么写、
+              通信怎么收敛、任务怎么可观测。
             </p>
           </div>
 
@@ -179,19 +178,19 @@ export default function App() {
             <div className="stack-visual">
               <div className="stack-layer stack-control">
                 <strong>Control Layer</strong>
-                <span>Owns workflow progression, user entry, and final output.</span>
+                <span>拥有流程推进权、用户入口和最终输出权。</span>
               </div>
               <div className="stack-layer stack-workers">
                 <strong>Worker Layer</strong>
-                <span>Produces domain output without silently taking over orchestration.</span>
+                <span>负责专业产出，但不悄悄接管编排职责。</span>
               </div>
               <div className="stack-layer stack-evaluator">
                 <strong>Evaluator Layer</strong>
-                <span>Returns conclusions to the control layer for revision or acceptance.</span>
+                <span>把结论回传给控制层，由它决定返工还是验收。</span>
               </div>
               <div className="stack-layer stack-artifacts">
                 <strong>Shared Artifact Layer</strong>
-                <span>Persists briefs, deliveries, reviews, and reports as formal handoffs.</span>
+                <span>把 briefs、deliveries、reviews、reports 沉淀成正式交接物。</span>
               </div>
             </div>
 
@@ -208,34 +207,32 @@ export default function App() {
 
         <section className="section-block comparison-block">
           <div className="section-heading narrow">
-            <SectionTag>Communication Model</SectionTag>
-            <h2>ClawKit chooses explicit return paths over mesh-like agent drift.</h2>
+            <SectionTag>通信模型</SectionTag>
+            <h2>ClawKit 选择明确的回流路径，而不是 mesh 式 agent 漂移。</h2>
           </div>
           <div className="comparison-grid">
             <article className="comparison-card comparison-bad">
-              <span className="card-label">Without Harness</span>
-              <h3>Cross-calls everywhere</h3>
+              <span className="card-label">没有 Harness</span>
+              <h3>到处横向互调</h3>
               <p>
-                Agents invent side channels, silently own the next step, and turn failures into
-                invisible routing problems.
+                agent 之间会不断发明侧向通道，悄悄接管下一步，把失败变成隐藏的路由问题。
               </p>
               <ul>
-                <li>Too many entry points</li>
-                <li>Unclear ownership of state</li>
-                <li>Sideways retries and hidden loops</li>
+                <li>入口过多</li>
+                <li>状态所有权不清晰</li>
+                <li>横向返工和隐藏循环</li>
               </ul>
             </article>
             <article className="comparison-card comparison-good">
-              <span className="card-label">With Harness</span>
-              <h3>Hub-and-spoke coordination</h3>
+              <span className="card-label">有 Harness</span>
+              <h3>Hub-and-Spoke 协调</h3>
               <p>
-                A control layer owns progression. Workers and evaluators report back. Shared
-                artifacts preserve the handoff history.
+                控制层拥有推进权。worker 和 evaluator 统一回传。shared artifacts 负责保留交接历史。
               </p>
               <ul>
-                <li>One deliberate entry point</li>
-                <li>Explicit success and failure return paths</li>
-                <li>Stable coordination you can explain and debug</li>
+                <li>唯一且明确的入口</li>
+                <li>成功和失败都具备清晰回流路径</li>
+                <li>协作关系稳定，可解释、可调试</li>
               </ul>
             </article>
           </div>
@@ -243,43 +240,41 @@ export default function App() {
 
         <section className="section-block kits-showcase" id="kits">
           <div className="section-heading">
-            <SectionTag>Reference Kits</SectionTag>
-            <h2>Two concrete workflows that show how Harness gets embedded into real systems.</h2>
+            <SectionTag>参考案例</SectionTag>
+            <h2>两个真实 workflow，展示 Harness 如何被嵌入到具体系统中。</h2>
           </div>
           <div className="kit-grid">
             <article className="kit-card">
               <div className="kit-card-header">
-                <span className="card-label">Product Delivery Harness</span>
+                <span className="card-label">产品交付 Harness</span>
                 <h3>product-kit</h3>
               </div>
               <p>
-                `pm` acts as the control layer between idea intake, engineering, testing, and final
-                business reporting.
+                `pm` 是整个流程的 control layer，负责需求 intake、研发推进、测试协调和最终对老板汇报。
               </p>
               <pre className="flow-block">Boss -&gt; pm -&gt; dev -&gt; pm -&gt; qa -&gt; pm -&gt; Boss</pre>
               <ArtifactList items={productArtifacts} />
               <ul className="kit-points">
-                <li>`pm` owns requirement clarification and final acceptance.</li>
-                <li>`dev` reports only to `pm`.</li>
-                <li>`qa` returns testing conclusions only to `pm`.</li>
+                <li>`pm` 负责需求澄清、设计汇报和最终验收。</li>
+                <li>`dev` 只向 `pm` 回传排期和交付物。</li>
+                <li>`qa` 只把测试结论回传给 `pm`。</li>
               </ul>
             </article>
 
             <article className="kit-card accent-card">
               <div className="kit-card-header">
-                <span className="card-label">Content Workflow Harness</span>
+                <span className="card-label">内容生产 Harness</span>
                 <h3>hotnews-kit</h3>
               </div>
               <p>
-                `orchestrator` sits at the center so research, writing, and editorial review move
-                through one visible control path.
+                `orchestrator` 位于中心，让 research、writing、editorial review 都经过同一条可见的控制路径。
               </p>
-              <pre className="flow-block">user -&gt; orchestrator -&gt; researcher/writers/editor -&gt; orchestrator -&gt; user</pre>
+              <pre className="flow-block">用户 -&gt; orchestrator -&gt; researcher / writers / editor -&gt; orchestrator -&gt; 用户</pre>
               <ArtifactList items={hotnewsArtifacts} />
               <ul className="kit-points">
-                <li>`researcher` does not directly dispatch writers anymore.</li>
-                <li>writers do not directly invoke `editor`.</li>
-                <li>`editor` evaluates and reports back through `orchestrator`.</li>
+                <li>`researcher` 不再直接派发 writer。</li>
+                <li>writer 不再直接调 `editor`。</li>
+                <li>`editor` 通过 `orchestrator` 回传评审结果。</li>
               </ul>
             </article>
           </div>
@@ -287,8 +282,8 @@ export default function App() {
 
         <section className="section-block install-block" id="install">
           <div className="section-heading">
-            <SectionTag>Install And Deploy</SectionTag>
-            <h2>Try the repo, install one kit, or publish the site directly from GitHub.</h2>
+            <SectionTag>安装与部署</SectionTag>
+            <h2>你可以直接跑仓库，也可以只安装一个 kit，或者把这个站点发布到 GitHub Pages。</h2>
           </div>
           <div className="install-grid">
             {installCommands.map((item) => (
@@ -299,9 +294,8 @@ export default function App() {
             ))}
           </div>
           <div className="pages-note">
-            <strong>GitHub Pages ready:</strong> this showcase can be deployed from the repository
-            itself using a dedicated Actions workflow that builds the `site/` app and publishes the
-            generated static assets.
+            <strong>GitHub Pages 已就绪：</strong> 这个展示站可以直接从当前仓库发布，依赖单独的
+            Actions workflow 构建 `site/` 并把静态产物部署到 Pages。
           </div>
         </section>
       </main>
@@ -309,14 +303,14 @@ export default function App() {
       <footer className="footer">
         <div>
           <strong>ClawKit</strong>
-          <p>Reusable workflow kits for disciplined OpenClaw orchestration.</p>
+          <p>面向 OpenClaw 的可复用工作流套件，用 Harness 约束多智能体协作。</p>
         </div>
         <div className="footer-links">
           <a href="https://github.com/iamhanson/clawkit" target="_blank" rel="noreferrer">
             GitHub
           </a>
           <a href="https://github.com/iamhanson/clawkit#readme" target="_blank" rel="noreferrer">
-            Docs
+            文档
           </a>
           <a href="https://github.com/iamhanson/clawkit/tree/main/kits" target="_blank" rel="noreferrer">
             Kits
