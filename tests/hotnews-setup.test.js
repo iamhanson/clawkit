@@ -152,6 +152,7 @@ test('updateAgentModelsInConfig writes grouped model ids into agents.list', () =
             workspace: '/tmp/default',
           },
           list: [
+            { id: 'sandbox-orchestrator', workspace: '/tmp/o0', subagents: { allowAgents: [] } },
             { id: 'sandbox-researcher', workspace: '/tmp/r', subagents: { allowAgents: [] } },
             { id: 'sandbox-editor', workspace: '/tmp/e', subagents: { allowAgents: [] } },
             { id: 'sandbox-toutiao-writer', workspace: '/tmp/t', subagents: { allowAgents: [] } },
@@ -171,13 +172,14 @@ test('updateAgentModelsInConfig writes grouped model ids into agents.list', () =
   updateAgentModelsInConfig({
     configPath,
     targetName: 'sandbox',
-    researcherEditorModelRef: 'provider-a/model-a',
+    orchestratorResearcherEditorModelRef: 'provider-a/model-a',
     writerModelRef: 'provider-b/model-b',
   });
 
   const updated = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
   assert.equal(updated.agents.defaults.workspace, '/tmp/default');
+  assert.equal(updated.agents.list.find((agent) => agent.id === 'sandbox-orchestrator').model, 'provider-a/model-a');
   assert.equal(updated.agents.list.find((agent) => agent.id === 'sandbox-researcher').model, 'provider-a/model-a');
   assert.equal(updated.agents.list.find((agent) => agent.id === 'sandbox-editor').model, 'provider-a/model-a');
   assert.equal(updated.agents.list.find((agent) => agent.id === 'sandbox-toutiao-writer').model, 'provider-b/model-b');

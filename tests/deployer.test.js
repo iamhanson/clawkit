@@ -67,8 +67,12 @@ test('createDeploymentPlan rewrites ids, routes, and absolute paths', () => {
     ['product-kit-pm', 'product-kit-dev', 'product-kit-qa'],
   );
   assert.deepEqual(
+    plan.mergedConfig.agents.list.find((agent) => agent.id === 'product-kit-pm').subagents.allowAgents,
+    ['product-kit-dev', 'product-kit-qa'],
+  );
+  assert.deepEqual(
     plan.mergedConfig.agents.list.find((agent) => agent.id === 'product-kit-dev').subagents.allowAgents,
-    ['product-kit-pm', 'product-kit-qa'],
+    ['product-kit-pm'],
   );
 });
 
@@ -93,7 +97,9 @@ test('createDeploymentPlan supports a custom target name', () => {
   assert.equal(plan.managedAgents[1].workspace, path.join(tempDir, 'workspace-sandbox-dev'));
   assert.equal(plan.managedAgents[2].workspace, path.join(tempDir, 'workspace-sandbox-qa'));
   assert.equal(plan.sharedWorkspacePath, path.join(tempDir, 'workspace-sandbox-shared'));
-  assert.deepEqual(plan.managedAgents[1].subagents.allowAgents, ['sandbox-pm', 'sandbox-qa']);
+  assert.deepEqual(plan.managedAgents[0].subagents.allowAgents, ['sandbox-dev', 'sandbox-qa']);
+  assert.deepEqual(plan.managedAgents[1].subagents.allowAgents, ['sandbox-pm']);
+  assert.deepEqual(plan.managedAgents[2].subagents.allowAgents, ['sandbox-pm']);
 });
 
 test('createDeploymentPlan carries per-agent tools.profile from kit metadata', () => {
@@ -112,9 +118,20 @@ test('createDeploymentPlan carries per-agent tools.profile from kit metadata', (
 
   const researcher = plan.managedAgents.find((agent) => agent.id === 'hotnews-kit-researcher');
   const editor = plan.managedAgents.find((agent) => agent.id === 'hotnews-kit-editor');
+  const orchestrator = plan.managedAgents.find((agent) => agent.id === 'hotnews-kit-orchestrator');
 
+  assert.deepEqual(orchestrator.tools, { profile: 'full' });
   assert.deepEqual(researcher.tools, { profile: 'full' });
   assert.deepEqual(editor.tools, { profile: 'full' });
+  assert.deepEqual(orchestrator.subagents.allowAgents, [
+    'hotnews-kit-researcher',
+    'hotnews-kit-toutiao-writer',
+    'hotnews-kit-xhs-writer',
+    'hotnews-kit-wechat-writer',
+    'hotnews-kit-douyin-writer',
+    'hotnews-kit-editor',
+  ]);
+  assert.deepEqual(researcher.subagents.allowAgents, ['hotnews-kit-orchestrator']);
 });
 
 test('dry-run does not write backup or target soul files', () => {
@@ -186,7 +203,7 @@ test('apply mode writes backup, soul files, workspace, and managed-only agent co
   assert.equal(mergedConfig.agents.list.some((agent) => agent.id === 'product-kit-pm'), true);
   assert.deepEqual(
     mergedConfig.agents.list.find((agent) => agent.id === 'product-kit-pm').subagents.allowAgents,
-    ['product-kit-dev'],
+    ['product-kit-dev', 'product-kit-qa'],
   );
   assert.equal(
     mergedConfig.agents.list.find((agent) => agent.id === 'product-kit-pm').workspace,
@@ -243,7 +260,7 @@ test('merge preserves unrelated agents and replaces/appends managed agents', () 
   );
   assert.deepEqual(
     mergedConfig.agents.list.find((agent) => agent.id === 'product-kit-pm').subagents.allowAgents,
-    ['product-kit-dev'],
+    ['product-kit-dev', 'product-kit-qa'],
   );
 });
 
@@ -375,18 +392,26 @@ test('product-kit soul files enforce handoff and reporting rules', () => {
 
   assert.match(pmSoul, /Do not ask the boss to start, summon, or prepare `dev`/);
   assert.match(pmSoul, /If `dev` is allowed, invoke `dev` yourself and continue the workflow/);
+  assert.match(pmSoul, /If `qa` is allowed, invoke `qa` yourself after development artifacts are ready/);
+  assert.match(pmSoul, /You are the workflow control layer between implementation and testing/);
   assert.match(pmSoul, /Do not treat development as complete until `qa` has returned a test outcome/);
   assert.match(pmSoul, /Before handing work to `dev`, report the product design status/);
   assert.match(pmSoul, /After `qa` completes testing, publish the final result to the boss yourself/);
-  assert.match(devSoul, /Do not ask `pm` or the boss to start, summon, or prepare `qa`/);
-  assert.match(devSoul, /If `qa` is allowed, invoke `qa` yourself and continue the workflow/);
-  assert.match(devSoul, /After implementation is complete, immediately hand the work to `qa` in the same workflow/);
-  assert.match(devSoul, /Do not stop at a development-complete update while testing is still pending/);
+  assert.match(devSoul, /You return implementation results only to `pm`/);
+  assert.match(devSoul, /Do not invoke `qa` directly/);
+  assert.match(devSoul, /After implementation is complete, immediately return the delivery handoff to `pm`/);
+  assert.match(qaSoul, /You receive review requests only from `pm`/);
+  assert.match(qaSoul, /Return quality results only to `pm`/);
+  assert.match(qaSoul, /Do not notify `dev` directly about failures or passes/);
   assert.match(qaSoul, /After testing is complete, always publish a clear test conclusion/);
   assert.match(qaSoul, /When the scoped checks pass, explicitly tell `pm` that the work is ready to launch/);
 });
 
-test('hotnews-kit soul files enforce writer-to-editor handoff and review coordination', () => {
+test('hotnews-kit soul files enforce harness orchestration and evaluation coordination', () => {
+  const orchestratorSoul = fs.readFileSync(
+    path.join(__dirname, '..', 'kits', 'hotnews-kit', 'agents', 'orchestrator', 'SOUL.md'),
+    'utf8',
+  );
   const researcherSoul = fs.readFileSync(
     path.join(__dirname, '..', 'kits', 'hotnews-kit', 'agents', 'researcher', 'SOUL.md'),
     'utf8',
@@ -412,20 +437,20 @@ test('hotnews-kit soul files enforce writer-to-editor handoff and review coordin
     'utf8',
   );
 
-  assert.match(researcherSoul, /Invoke all four writers yourself in the same workflow/);
-  assert.match(researcherSoul, /Do not stop after writing `research\.md` while writer handoff is still pending/);
-  assert.match(toutiaoSoul, /Write a submission marker to `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/toutiao\.md`/);
-  assert.match(xhsSoul, /Write a submission marker to `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/xiaohongshu\.md`/);
-  assert.match(wechatSoul, /Write a submission marker to `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/wechat\.md`/);
-  assert.match(douyinSoul, /Write a submission marker to `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/douyin\.md`/);
-  assert.match(toutiaoSoul, /After writing the final article, immediately notify `editor` in the same workflow/);
-  assert.match(toutiaoSoul, /Use `sessions_spawn` or the runtime's subagent handoff mechanism to invoke `editor`/);
-  assert.match(xhsSoul, /Use `sessions_spawn` or the runtime's subagent handoff mechanism to invoke `editor`/);
-  assert.match(wechatSoul, /Use `sessions_spawn` or the runtime's subagent handoff mechanism to invoke `editor`/);
-  assert.match(douyinSoul, /Use `sessions_spawn` or the runtime's subagent handoff mechanism to invoke `editor`/);
-  assert.match(toutiaoSoul, /Do not rely on a plain message tool to reach `editor`/);
-  assert.match(editorSoul, /Treat `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/` as the source of truth/);
-  assert.match(editorSoul, /If fewer than four submissions are present, explicitly report which platform is still missing/);
+  assert.match(orchestratorSoul, /You are the only agent that receives input from the user/);
+  assert.match(orchestratorSoul, /Create `tasks\/\{task-id\}\/brief\.json` before invoking `researcher`/);
+  assert.match(orchestratorSoul, /Only invoke `editor` after all four writer submissions are present/);
+  assert.match(orchestratorSoul, /If `review\.json` says revision is needed, re-invoke only the affected writer/);
+  assert.match(researcherSoul, /You do not dispatch writers directly/);
+  assert.match(researcherSoul, /After writing `research\.md` and `research\.json`, return control to `orchestrator`/);
+  assert.match(toutiaoSoul, /Write a submission record to `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/toutiao\.json`/);
+  assert.match(xhsSoul, /Write a submission record to `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/xiaohongshu\.json`/);
+  assert.match(wechatSoul, /Write a submission record to `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/wechat\.json`/);
+  assert.match(douyinSoul, /Write a submission record to `workspace-hotnews-kit-shared\/submissions\/\{task-id\}\/douyin\.json`/);
+  assert.match(toutiaoSoul, /You send completed work only to `orchestrator`/);
+  assert.match(editorSoul, /You receive review requests only from `orchestrator`/);
+  assert.match(editorSoul, /Write `reviews\/\{task-id\}\/review\.json` and return the review result to `orchestrator`/);
+  assert.match(editorSoul, /Do not report the final result directly to the user/);
 });
 
 test('apply mode creates hotnews-kit shared submission workspace', () => {

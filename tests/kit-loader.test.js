@@ -16,9 +16,12 @@ test('listKits returns product-kit', () => {
   const kits = listKits(kitsDir);
   assert.equal(kits.length >= 1, true);
   const productKit = kits.find((kit) => kit.name === 'product-kit');
+  const hotnewsKit = kits.find((kit) => kit.name === 'hotnews-kit');
   assert.notEqual(productKit, undefined);
+  assert.notEqual(hotnewsKit, undefined);
   assert.equal(productKit.displayName, 'Product Development Workflow');
   assert.equal(typeof productKit.description, 'string');
+  assert.equal(hotnewsKit.displayName, 'Hot News Harness Workflow');
 });
 
 test('loadKit succeeds for product-kit', () => {
@@ -37,8 +40,39 @@ test('loadKit succeeds for product-kit', () => {
   assert.deepEqual(kit.metadata.agents[2].tools, { profile: 'full' });
   assert.deepEqual(kit.config.agents.defaults, {});
   assert.deepEqual(
+    kit.config.agents.list.find((agent) => agent.id === 'pm').subagents.allowAgents,
+    ['dev', 'qa'],
+  );
+  assert.deepEqual(
     kit.config.agents.list.find((agent) => agent.id === 'dev').subagents.allowAgents,
-    ['pm', 'qa'],
+    ['pm'],
+  );
+  assert.deepEqual(
+    kit.config.agents.list.find((agent) => agent.id === 'qa').subagents.allowAgents,
+    ['pm'],
+  );
+});
+
+test('loadKit succeeds for hotnews-kit with orchestrator hub routing', () => {
+  const kit = loadKit('hotnews-kit', kitsDir);
+  assert.equal(kit.name, 'hotnews-kit');
+  assert.equal(kit.metadata.agents.length, 7);
+  assert.equal(kit.metadata.agents[0].id, 'orchestrator');
+  assert.deepEqual(kit.metadata.agents[0].allowAgents, [
+    'researcher',
+    'toutiao-writer',
+    'xhs-writer',
+    'wechat-writer',
+    'douyin-writer',
+    'editor',
+  ]);
+  assert.deepEqual(
+    kit.config.agents.list.find((agent) => agent.id === 'researcher').subagents.allowAgents,
+    ['orchestrator'],
+  );
+  assert.deepEqual(
+    kit.config.agents.list.find((agent) => agent.id === 'editor').subagents.allowAgents,
+    ['orchestrator'],
   );
 });
 
